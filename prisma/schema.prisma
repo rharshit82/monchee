@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model UserProfile {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  username  String   @unique
+  avatarUrl String?
+  bio       String?
+
+  points    Int      @default(0)
+  level     Int      @default(1)
+  xp        Int      @default(0)
+  streak    Int      @default(0)
+  lastActive DateTime?
+
+  badges    Badge[]
+  progress  Progress[]
+  notes     Note[]
+  comments  Comment[]
+}
+
+model Progress {
+  id        String   @id @default(cuid())
+  userId    String
+  user      UserProfile @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
+  type      String   // "quiz", "lab", "deep-dive", "cheatsheet", "library"
+  ref       String   // slug or id of the item
+  status    String   // "completed" or "in-progress"
+  score     Int?     // For quizzes
+  points    Int?     // Points awarded
+  xp        Int?     // XP awarded
+  createdAt DateTime @default(now())
+}
+
+model Badge {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      UserProfile? @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
+  name      String
+  icon      String?
+  description String?
+  category  String?
+  createdAt DateTime @default(now())
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  user      UserProfile @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
+  type      String   // "lab" | "deep-dive" | "cheatsheet"
+  ref       String   // slug or id
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  userId    String
+  user      UserProfile @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
+  type      String   // "lab" | "deep-dive"
+  ref       String   // slug or id
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
