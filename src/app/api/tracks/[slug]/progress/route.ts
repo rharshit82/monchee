@@ -4,9 +4,10 @@ import { prisma } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const { userId } = await auth();
     
     if (!userId) {
@@ -44,7 +45,7 @@ export async function GET(
       ]
     };
 
-    const modules = trackModules[params.slug];
+    const modules = trackModules[resolvedParams.slug];
     if (!modules) {
       return NextResponse.json({ error: 'Track not found' }, { status: 404 });
     }

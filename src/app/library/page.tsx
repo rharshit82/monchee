@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, MessageSquare, Zap, BookOpen, ArrowRight } from "lucide-react";
+import { Database, MessageSquare, Zap, BookOpen, ArrowRight, Loader, Search } from "lucide-react";
 import Link from "next/link";
 
 const concepts = [
@@ -13,6 +13,22 @@ const concepts = [
     category: "Database"
   },
   {
+    slug: "load-balancing",
+    title: "Load Balancing",
+    description: "Distributing incoming requests across multiple servers to improve performance and reliability.",
+    icon: Loader,
+    difficulty: "Beginner",
+    category: "Infrastructure"
+  },
+  {
+    slug: "indexing",
+    title: "Database Indexing",
+    description: "Data structure optimization technique that speeds up database queries and improves performance.",
+    icon: Search,
+    difficulty: "Intermediate",
+    category: "Database"
+  },
+  {
     slug: "message-queues",
     title: "Message Queues",
     description: "Asynchronous communication pattern for decoupling services and handling high-volume data processing.",
@@ -21,12 +37,44 @@ const concepts = [
     category: "Communication"
   },
   {
+    slug: "load-balancing",
+    title: "Load Balancing",
+    description: "Distributing incoming requests across multiple servers to improve performance and reliability.",
+    icon: Loader,
+    difficulty: "Beginner",
+    category: "Infrastructure"
+  },
+  {
+    slug: "indexing",
+    title: "Database Indexing",
+    description: "Data structure optimization technique that speeds up database queries and improves performance.",
+    icon: Search,
+    difficulty: "Intermediate",
+    category: "Database"
+  },
+  {
     slug: "cap-theorem",
     title: "CAP Theorem",
     description: "Fundamental trade-off between Consistency, Availability, and Partition tolerance in distributed systems.",
     icon: Zap,
     difficulty: "Advanced",
     category: "Theory"
+  },
+  {
+    slug: "load-balancing",
+    title: "Load Balancing",
+    description: "Distributing incoming requests across multiple servers to improve performance and reliability.",
+    icon: Loader,
+    difficulty: "Beginner",
+    category: "Infrastructure"
+  },
+  {
+    slug: "indexing",
+    title: "Database Indexing",
+    description: "Data structure optimization technique that speeds up database queries and improves performance.",
+    icon: Search,
+    difficulty: "Intermediate",
+    category: "Database"
   }
 ];
 
@@ -45,7 +93,7 @@ export default function LibraryPage() {
             </p>
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
               <BookOpen className="h-4 w-4" />
-              <span>3 core concepts available</span>
+              <span>5 core concepts available</span>
             </div>
           </div>
         </div>

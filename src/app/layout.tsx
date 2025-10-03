@@ -5,6 +5,7 @@ import Navbar from "@/components/navbar";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/toaster";
 
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -24,11 +25,13 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className={inter.variable}>
         <body className="font-sans antialiased">
-          <Navbar />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <Toaster />
+          <div>
+            <Navbar />
+            <main className="min-h-screen">
+              {children}
+            </main>
+            <Toaster />
+          </div>
         </body>
       </html>
     </ClerkProvider>

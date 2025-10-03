@@ -15,8 +15,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, Search } from "lucide-react";
-import { useSearch } from "@/hooks/use-search";
-import SearchModal from "@/components/search-modal";
+import { useGlobalSearch } from "@/hooks/use-global-search";
+import SimpleSearchModal from "@/components/simple-search-modal";
 
 const navItems = [
   { name: 'Deep Dives', href: '/deep-dives' },
@@ -31,7 +31,7 @@ const navItems = [
 export default function Navbar() {
   const { user, isLoaded } = useUser();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isOpen, setIsOpen, openSearch } = useSearch();
+  const { isOpen, setIsOpen, openSearch } = useGlobalSearch();
 
   return (
     <>
@@ -230,7 +230,7 @@ export default function Navbar() {
       </nav>
 
       {/* Search Modal */}
-      <SearchModal open={isOpen} onOpenChange={setIsOpen} />
+      <SimpleSearchModal open={isOpen} onOpenChange={setIsOpen} />
     </>
   );
 }

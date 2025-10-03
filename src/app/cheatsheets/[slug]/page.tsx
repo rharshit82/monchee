@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { usePdfExport } from "@/hooks/use-pdf-export";
+import { exportCheatsheetPDF } from "@/lib/pdf-export";
 import { shareToLinkedIn } from "@/lib/linkedin-share";
-import { Download, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import mermaid from "mermaid";
 import NotesSection from "@/components/notes-section";
+import PDFExportButton from "@/components/pdf-export-button";
 
 // Mock data - in a real app, this would come from an API
 const cheatsheets = {
@@ -20,85 +21,235 @@ const cheatsheets = {
         title: "Why Caching Matters",
         content: [
           "Reduces latency by serving data from memory instead of disk",
-          "Offloads database load, allowing it to handle more concurrent users",
+          "Offloads database load, allowing it to handle more concurrent users", 
           "Improves throughput and reduces infrastructure costs",
-          "Enables better user experience with faster response times"
+          "Enables better user experience with faster response times",
+          "Reduces bandwidth usage and server load",
+          "Provides resilience during database outages"
         ]
       },
       "cache-placement": {
         title: "Cache Placement Patterns",
         content: [
-          "Client-Side Cache: Browser cache, mobile app cache",
-          "CDN/Edge Cache: Cloudflare, Akamai for static content",
-          "Reverse Proxy Cache: Nginx, Varnish for dynamic content",
+          "Client-Side Cache: Browser cache, mobile app cache for static assets",
+          "CDN/Edge Cache: Cloudflare, Akamai for global content distribution",
+          "Reverse Proxy Cache: Nginx, Varnish for dynamic content caching",
           "Application Cache: Redis, Memcached for application data",
-          "Database Query Cache: Internal database caches"
+          "Database Query Cache: Internal database caches for query results",
+          "Distributed Cache: Hazelcast, Ignite for multi-node caching"
         ]
       },
       "invalidation": {
         title: "Cache Invalidation Strategies",
         content: [
-          "Write-through: Write to cache and database simultaneously",
-          "Write-behind: Write to cache first, then batch write to database",
-          "Cache-aside: Application manages cache, loads on miss",
-          "TTL-based: Time-to-live expiration for automatic invalidation"
+          "Write-Through: Write to cache and database simultaneously",
+          "Write-Behind: Write to cache first, then batch write to database",
+          "Write-Around: Write directly to database, bypassing cache",
+          "Cache-Aside: Application manages cache, lazy loading pattern",
+          "TTL-based: Time-to-live expiration for automatic invalidation",
+          "Event-driven: Invalidate based on database change events"
         ]
       },
       "pitfalls": {
         title: "Common Pitfalls",
         content: [
-          "Stale data: Serving outdated information to users",
-          "Cache stampede: Multiple requests for same missing key",
-          "Thundering herd: All requests hit database when cache expires",
-          "Memory leaks: Not properly evicting old cache entries"
+          "Cache Stampede: Multiple requests miss cache simultaneously",
+          "Stale Data: Serving outdated information to users",
+          "Memory Leaks: Not properly evicting old cache entries",
+          "Inconsistent Invalidation: Partial cache invalidation failures",
+          "Over-caching: Caching data that changes frequently",
+          "Under-caching: Not caching data that would benefit from it"
         ]
       },
       "best-practices": {
         title: "Best Practices",
         content: [
-          "Set appropriate TTLs based on data freshness requirements",
-          "Use cache warming for popular keys during low traffic",
-          "Monitor hit/miss ratios to optimize cache effectiveness",
+          "Set appropriate TTL values based on data volatility",
+          "Use cache warming to pre-populate frequently accessed data",
           "Implement circuit breakers for cache failures",
-          "Use consistent hashing for distributed caches"
+          "Monitor cache hit rates and adjust strategies accordingly",
+          "Use consistent hashing for distributed cache sharding",
+          "Implement graceful degradation when cache is unavailable"
         ]
       }
     }
   },
   "database-trade-offs": {
     title: "Database Trade-offs",
-    description: "Understand the fundamental trade-offs between different database types and when to use each.",
+    description: "Key considerations when choosing database technologies.",
     sections: {
       "acid-vs-base": {
         title: "ACID vs BASE",
         content: [
           "ACID: Atomicity, Consistency, Isolation, Durability",
           "BASE: Basically Available, Soft state, Eventual consistency",
-          "SQL databases prioritize ACID properties",
-          "NoSQL databases often follow BASE principles"
+          "ACID: Strong consistency, complex transactions",
+          "BASE: High availability, eventual consistency",
+          "ACID: Traditional RDBMS (PostgreSQL, MySQL)",
+          "BASE: NoSQL databases (MongoDB, Cassandra)"
+        ]
+      },
+      "sql-vs-nosql": {
+        title: "SQL vs NoSQL",
+        content: [
+          "SQL: Structured data, ACID compliance, complex queries",
+          "NoSQL: Flexible schema, horizontal scaling, simple queries",
+          "SQL: Better for complex relationships and transactions",
+          "NoSQL: Better for high-volume, simple operations",
+          "SQL: PostgreSQL, MySQL, SQL Server",
+          "NoSQL: MongoDB, Cassandra, DynamoDB, Redis"
         ]
       },
       "consistency-models": {
         title: "Consistency Models",
         content: [
-          "Strong consistency: All reads get latest write",
-          "Eventual consistency: System becomes consistent over time",
-          "Weak consistency: No guarantee of consistency",
-          "Choose based on application requirements"
+          "Strong Consistency: All nodes see updates immediately",
+          "Eventual Consistency: System becomes consistent over time",
+          "Weak Consistency: No guarantees about consistency timing",
+          "Causal Consistency: Causally related operations are consistent",
+          "Session Consistency: Consistency within a user session",
+          "Monotonic Consistency: Reads never return older data"
+        ]
+      }
+    }
+  },
+  "consistency-models": {
+    title: "Consistency Models",
+    description: "Understanding different consistency guarantees in distributed systems.",
+    sections: {
+      "strong-consistency": {
+        title: "Strong Consistency",
+        content: [
+          "All nodes see the same data at the same time",
+          "Immediate consistency across all replicas",
+          "Higher latency due to synchronization requirements",
+          "Examples: Financial systems, inventory management",
+          "Trade-off: Highest consistency, lowest performance",
+          "Suitable for systems where data accuracy is critical"
+        ]
+      },
+      "eventual-consistency": {
+        title: "Eventual Consistency",
+        content: [
+          "System will become consistent over time",
+          "Temporary inconsistency is acceptable",
+          "Better performance and availability",
+          "Examples: DNS, social media feeds",
+          "Trade-off: Good performance, eventual accuracy",
+          "Suitable for systems where temporary inconsistency is acceptable"
+        ]
+      },
+      "weak-consistency": {
+        title: "Weak Consistency",
+        content: [
+          "No guarantees about when updates will be visible",
+          "System may never become consistent",
+          "Used when consistency is not critical",
+          "Examples: Web caching, real-time systems",
+          "Trade-off: Highest performance, lowest consistency",
+          "Suitable for systems where performance is paramount"
+        ]
+      },
+      "cap-theorem": {
+        title: "CAP Theorem Trade-offs",
+        content: [
+          "Consistency: All nodes see the same data simultaneously",
+          "Availability: System remains operational at all times",
+          "Partition Tolerance: System continues despite network failures",
+          "Can only guarantee 2 out of 3 properties",
+          "CP Systems: Consistency + Partition Tolerance (e.g., MongoDB)",
+          "AP Systems: Availability + Partition Tolerance (e.g., Cassandra)"
         ]
       }
     }
   }
 };
 
-export default function CheatsheetPage({ params }: { params: { slug: string } }) {
+function getMermaidDiagram(slug: string): string {
+  switch (slug) {
+    case "caching-patterns":
+      return `
+graph TD
+    User[Client] --> CDN[CDN/Edge Cache]
+    CDN --> App[App Server]
+    App --> Redis[Redis Cache]
+    App --> DB[(Database)]
+    
+    subgraph "Cache Layers"
+        CDN
+        Redis
+        DB
+    end
+    
+    style CDN fill:#e3f2fd
+    style Redis fill:#f1f8e9
+    style DB fill:#fff3e0
+      `;
+    case "database-trade-offs":
+      return `
+graph TD
+    subgraph "ACID Properties"
+        A[Atomicity]
+        C[Consistency]
+        I[Isolation]
+        D[Durability]
+    end
+    
+    subgraph "BASE Properties"
+        BA[Basically Available]
+        S[Soft State]
+        E[Eventual Consistency]
+    end
+    
+    style A fill:#e3f2fd
+    style BA fill:#f1f8e9
+      `;
+    case "consistency-models":
+      return `
+graph TD
+    subgraph "Consistency Levels"
+        SC[Strong Consistency]
+        EC[Eventual Consistency]
+        WC[Weak Consistency]
+    end
+    
+    subgraph "CAP Theorem"
+        C[Consistency]
+        A[Availability]
+        P[Partition Tolerance]
+    end
+    
+    style SC fill:#ffebee
+    style EC fill:#e8f5e8
+    style WC fill:#fff3e0
+      `;
+    default:
+      return "";
+  }
+}
+
+export default function CheatsheetPage({ params }: { params: Promise<{ slug: string }> }) {
   const [cheatsheet, setCheatsheet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const { exportPdf, isGenerating } = usePdfExport({
-    elementId: 'cheatsheet-content',
-    filename: `${params.slug}-cheatsheet.pdf`,
-  });
+  const handleExportPDF = () => {
+    if (!cheatsheet) return;
+    
+    const content = {
+      whyItMatters: cheatsheet.sections["why-caching"]?.content.join(" ") || "Caching is crucial for system performance and scalability.",
+      placementPatterns: cheatsheet.sections["cache-placement"]?.content || [],
+      invalidationStrategies: cheatsheet.sections["invalidation"]?.content || [],
+      pitfalls: cheatsheet.sections["pitfalls"]?.content || [],
+      bestPractices: cheatsheet.sections["best-practices"]?.content || []
+    };
+    
+    exportCheatsheetPDF({
+      title: cheatsheet.title,
+      description: cheatsheet.description,
+      content,
+      username: "user" // In a real app, get from auth
+    });
+  };
 
   const handleShare = () => {
     const url = window.location.href;
@@ -109,25 +260,28 @@ export default function CheatsheetPage({ params }: { params: { slug: string } })
   };
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      const data = cheatsheets[params.slug as keyof typeof cheatsheets];
-      if (data) {
-        setCheatsheet(data);
-      }
-      setLoading(false);
-    }, 500);
+    const loadCheatsheet = async () => {
+      const { slug } = await params;
+      setLoading(true);
+      // Simulate loading
+      const timer = setTimeout(() => {
+        const data = cheatsheets[slug as keyof typeof cheatsheets];
+        if (data) {
+          setCheatsheet(data);
+          mermaid.initialize({ startOnLoad: true });
+        }
+        setLoading(false);
+      }, 500);
 
-    return () => clearTimeout(timer);
-  }, [params.slug]);
-
-  useEffect(() => {
-    mermaid.contentLoaded();
-  }, []);
+      return () => clearTimeout(timer);
+    };
+    
+    loadCheatsheet();
+  }, [params]);
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-lg">Loading cheatsheet...</div>
         </div>
@@ -137,82 +291,86 @@ export default function CheatsheetPage({ params }: { params: { slug: string } })
 
   if (!cheatsheet) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Cheatsheet Not Found</h1>
-          <p className="text-gray-600">The cheatsheet you're looking for doesn't exist.</p>
+          <div className="text-lg">Cheatsheet not found</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <section className="text-center mb-12">
-        <h1 className="text-5xl font-extrabold tracking-tight gradient-text mb-4">
-          {cheatsheet.title}
-        </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          {cheatsheet.description}
-        </p>
-        <div className="mt-6 flex justify-center space-x-4">
-          <Button onClick={exportPdf} disabled={isGenerating}>
-            {isGenerating ? 'Generating PDF...' : (
-              <>
-                <Download className="mr-2 h-4 w-4" />
-                Download PDF
-              </>
-            )}
-          </Button>
-          <Button variant="outline" onClick={handleShare}>
-            <Share2 className="mr-2 h-4 w-4" />
-            Share to LinkedIn
-          </Button>
-        </div>
-      </section>
-
-      <Card className="mb-8" id="cheatsheet-content">
-        <CardContent className="p-6">
-          <div className="space-y-8">
-            {Object.entries(cheatsheet.sections).map(([key, section]: [string, any]) => (
-              <div key={key} className="space-y-4">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {section.title}
-                </h3>
-                <ul className="space-y-2">
-                  {section.content.map((item: string, index: number) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <span className="text-blue-500 mt-1">•</span>
-                      <span className="text-gray-700">{item}</span>
-                    </li>
-                  ))}
-                </ul>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <section className="bg-white border-b">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                  {cheatsheet.title}
+                </h1>
+                <p className="text-xl text-gray-600 mb-6">
+                  {cheatsheet.description}
+                </p>
               </div>
-            ))}
-
-            <div className="mt-8">
-              <h3 className="text-2xl font-bold mb-4">Mini Diagram</h3>
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <div className="mermaid">
-                  {`graph TD
-                    User[Client] --> CDN[CDN/Edge Cache]
-                    CDN --> App[Application Server]
-                    App --> Redis[Redis Cache]
-                    App --> DB[(Database)]
-                    Redis --> DB`}
-                </div>
+              <div className="flex gap-2">
+                <PDFExportButton onExport={handleExportPDF} />
+                <Button onClick={handleShare} variant="outline" size="sm">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* Notes Section */}
-      <NotesSection 
-        type="cheatsheet" 
-        ref={params.slug} 
-        title={cheatsheet.title}
-      />
+      {/* Content */}
+      <section className="py-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto space-y-8">
+            {Object.entries(cheatsheet.sections).map(([key, section]: [string, any]) => (
+              <Card key={key}>
+                <CardHeader>
+                  <CardTitle className="text-2xl">{section.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    {section.content.map((item: string, index: number) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="text-gray-700">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ))}
+
+            {/* Mermaid Diagram */}
+            {getMermaidDiagram(cheatsheet.title.toLowerCase().replace(/\s+/g, '-')) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Visual Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mermaid">
+                    {getMermaidDiagram(cheatsheet.title.toLowerCase().replace(/\s+/g, '-'))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Notes Section */}
+            <NotesSection 
+              type="cheatsheet" 
+              ref={cheatsheet.title.toLowerCase().replace(/\s+/g, '-')} 
+              title={cheatsheet.title}
+            />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

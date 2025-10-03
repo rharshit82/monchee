@@ -1,14 +1,14 @@
 const { PrismaClient } = require("@prisma/client");
 
-const prisma = new PrismaClient();
+const prismaClient = new PrismaClient();
 
 async function main() {
   console.log("🌱 Starting database seeding...");
 
   // Clear existing data
-  await prisma.badge.deleteMany();
-  await prisma.progress.deleteMany();
-  await prisma.userProfile.deleteMany();
+  await prismaClient.badge.deleteMany();
+  await prismaClient.progress.deleteMany();
+  await prismaClient.userProfile.deleteMany();
 
   console.log("�� Cleared existing data");
 
@@ -82,14 +82,14 @@ async function main() {
     }
   ];
 
-  const createdUsers = await prisma.userProfile.createMany({
+  const createdUsers = await prismaClient.userProfile.createMany({
     data: demoUsers,
   });
 
   console.log(`👥 Created ${createdUsers.count} demo users`);
 
   // Get user IDs for progress and badges
-  const users = await prisma.userProfile.findMany();
+  const users = await prismaClient.userProfile.findMany();
   const userMap = new Map(users.map((user: any) => [user.username, user.id]));
 
   // Create progress records
@@ -143,7 +143,7 @@ async function main() {
     { userId: userMap.get("emma"), type: "library", ref: "message-queues", status: "completed", points: 18 },
   ].filter(p => p.userId); // Filter out any undefined user IDs
 
-  const createdProgress = await prisma.progress.createMany({
+  const createdProgress = await prismaClient.progress.createMany({
     data: progressData,
   });
 
@@ -195,7 +195,7 @@ async function main() {
     { userId: userMap.get("emma"), name: "Library Explorer", icon: "📖", description: "Explored the library", category: "achievement" },
   ].filter(b => b.userId); // Filter out any undefined user IDs
 
-  const createdBadges = await prisma.badge.createMany({
+  const createdBadges = await prismaClient.badge.createMany({
     data: badgeData,
   });
 
@@ -206,7 +206,7 @@ async function main() {
     const userProgress = progressData.filter((p: any) => p.userId === user.id);
     const totalPoints = userProgress.reduce((sum: number, p: any) => sum + (p.points || 0), 0);
     
-    await prisma.userProfile.update({
+    await prismaClient.userProfile.update({
       where: { id: user.id },
       data: { points: totalPoints }
     });
@@ -215,7 +215,7 @@ async function main() {
   console.log("💰 Updated user points based on progress");
 
   // Display summary
-  const finalUsers = await prisma.userProfile.findMany({
+  const finalUsers = await prismaClient.userProfile.findMany({
     include: {
       _count: {
         select: {
@@ -242,5 +242,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await prismaClient.$disconnect();
   });

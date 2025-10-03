@@ -42,10 +42,23 @@ export const usePDFExport = () => {
     }
   };
 
+  const exportDeepDive = async (deepDiveData: any) => {
+    setIsGenerating(true);
+    try {
+      // Use window.print() for now as a simple PDF export
+      window.print();
+    } catch (error) {
+      console.error('Error generating deep dive PDF:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return {
     isGenerating,
     exportCheatsheet,
     exportLabReport,
-    exportProfile
+    exportProfile,
+    exportDeepDive
   };
 };

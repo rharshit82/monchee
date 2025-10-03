@@ -14,6 +14,14 @@ const cheatsheets = [
     difficulty: "Intermediate"
   },
   {
+    slug: "consistency-models",
+    title: "Consistency Models", 
+    description: "Understanding strong, eventual, and weak consistency models. Essential for distributed systems and database design decisions.",
+    image: "https://placehold.co/600x400",
+    topics: ["Strong Consistency", "Eventual Consistency", "CAP Theorem", "ACID", "BASE"],
+    difficulty: "Advanced"
+  },
+  {
     slug: "database-trade-offs",
     title: "Database Trade-offs",
     description: "ACID vs BASE, CAP theorem, and choosing the right database for your use case. Quick reference for technical interviews.",
@@ -38,7 +46,7 @@ export default function CheatsheetsPage() {
             </p>
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
               <FileText className="h-4 w-4" />
-              <span>2 comprehensive guides available</span>
+              <span>3 comprehensive guides available</span>
             </div>
           </div>
         </div>
@@ -47,7 +55,7 @@ export default function CheatsheetsPage() {
       {/* Cheatsheets Grid */}
       <section className="py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {cheatsheets.map((cheatsheet) => (
               <Card key={cheatsheet.slug} className="group hover:shadow-xl transition-all duration-300 overflow-hidden">
                 <div className="relative h-48 overflow-hidden">

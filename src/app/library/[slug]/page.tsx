@@ -1,8 +1,12 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, Clock, User, ExternalLink, Database, MessageSquare, Zap } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, User, ExternalLink, Database, MessageSquare, Zap, Loader, Search } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import mermaid from "mermaid";
 
 // Mock data - in a real app, this would come from a CMS or database
 const conceptsData = {
@@ -14,7 +18,25 @@ const conceptsData = {
     category: "Database",
     readTime: "12 min read",
     author: "System Design Team",
-    publishedDate: "Dec 22, 2024"
+    publishedDate: "Dec 22, 2024",
+    content: {
+      definition: `Sharding is a method for distributing data across multiple machines (shards) to improve scalability and performance. Each shard holds a subset of the data, and together, all shards form the complete dataset.`,
+      whyItMatters: `In system design, sharding is crucial for handling large datasets and high traffic loads that a single database server cannot manage. It enables horizontal scaling, distributing the load and storage requirements across many servers. In interviews, understanding sharding demonstrates knowledge of scalable database architectures.`,
+      realWorldExamples: `
+*   **MongoDB**: Supports sharding natively, allowing data to be distributed across a cluster of machines.
+*   **Elasticsearch**: Uses sharding (called "indices" and "shards") to distribute and parallelize search operations.
+*   **Large-scale web services**: Many large applications like social media platforms or e-commerce sites use sharding to manage user data or product catalogs.
+`,
+      diagram: `
+graph TD
+    Client --> LoadBalancer[Load Balancer]
+    LoadBalancer --> Shard1[Shard 1 (Users A-M)]
+    LoadBalancer --> Shard2[Shard 2 (Users N-Z)]
+    Shard1 --> DB1[(Database 1)]
+    Shard2 --> DB2[(Database 2)]
+`,
+      takeaway: `Sharding is a key technique for horizontal scaling of databases. It improves performance and availability but introduces complexity in data distribution, query routing, and rebalancing.`
+    }
   },
   "message-queues": {
     title: "Message Queues",
@@ -24,7 +46,23 @@ const conceptsData = {
     category: "Communication",
     readTime: "10 min read",
     author: "System Design Team",
-    publishedDate: "Dec 20, 2024"
+    publishedDate: "Dec 20, 2024",
+    content: {
+      definition: `A message queue is a form of asynchronous service-to-service communication used in serverless and microservices architectures. Messages are stored in a queue until they are processed and deleted. Each message is processed only once, by a single consumer.`,
+      whyItMatters: `Message queues decouple services, allowing them to communicate without direct dependencies. This improves fault tolerance, scalability, and responsiveness. For interviews, it's essential to explain how message queues enable asynchronous processing and handle spikes in traffic.`,
+      realWorldExamples: `
+*   **Apache Kafka**: A distributed streaming platform used for building real-time data pipelines and streaming applications.
+*   **RabbitMQ**: A popular open-source message broker that implements the Advanced Message Queuing Protocol (AMQP).
+*   **Amazon SQS (Simple Queue Service)**: A fully managed message queuing service that enables you to decouple and scale microservices, distributed systems, and serverless applications.
+`,
+      diagram: `
+graph TD
+    Producer[Service A (Producer)] --> MQ[Message Queue]
+    MQ --> Consumer1[Service B (Consumer)]
+    MQ --> Consumer2[Service C (Consumer)]
+`,
+      takeaway: `Message queues are vital for building robust, scalable, and decoupled distributed systems. They handle asynchronous communication, buffer requests, and improve system resilience.`
+    }
   },
   "cap-theorem": {
     title: "CAP Theorem",
@@ -34,330 +72,207 @@ const conceptsData = {
     category: "Theory",
     readTime: "15 min read",
     author: "System Design Team",
-    publishedDate: "Dec 18, 2024"
+    publishedDate: "Dec 18, 2024",
+    content: {
+      definition: `The CAP theorem states that a distributed data store can only provide two of three guarantees: Consistency, Availability, and Partition tolerance. You must choose which one to sacrifice when a network partition occurs.`,
+      whyItMatters: `CAP theorem is fundamental to designing distributed systems. It forces architects to make critical trade-offs based on application requirements. In interviews, discussing CAP theorem demonstrates a deep understanding of distributed system challenges.`,
+      realWorldExamples: `
+*   **CP Systems (Consistency & Partition Tolerance)**: Prioritize consistency, meaning data is always up-to-date across all nodes, even if it means some nodes become unavailable during a partition. Examples: Traditional RDBMS (when distributed), MongoDB (in certain configurations), Hbase.
+*   **AP Systems (Availability & Partition Tolerance)**: Prioritize availability, meaning the system remains operational even during a partition, potentially serving stale data. Examples: Cassandra, DynamoDB, CouchDB.
+`,
+      diagram: `
+graph TD
+    subgraph CAP Theorem
+        C[Consistency] --- A[Availability]
+        A --- P[Partition Tolerance]
+        P --- C
+    end
+    style C fill:#f9f,stroke:#333,stroke-width:2px
+    style A fill:#bbf,stroke:#333,stroke-width:2px
+    style P fill:#ccf,stroke:#333,stroke-width:2px
+`,
+      takeaway: `CAP theorem is a foundational concept for distributed systems. There's no "perfect" choice; the best approach depends on the specific needs of the application regarding data integrity versus continuous operation.`
+    }
+  },
+  "load-balancing": {
+    title: "Load Balancing",
+    subtitle: "Distributing requests across multiple servers for better performance",
+    icon: Loader,
+    difficulty: "Beginner",
+    category: "Infrastructure",
+    readTime: "8 min read",
+    author: "System Design Team",
+    publishedDate: "Dec 15, 2024",
+    content: {
+      definition: `Load balancing is the process of distributing network traffic across multiple servers. This ensures no single server is overloaded, improving application responsiveness and availability.`,
+      whyItMatters: `Load balancers are essential for scaling applications horizontally and ensuring high availability. They prevent single points of failure and optimize resource utilization. In interviews, explaining load balancing demonstrates an understanding of how to build resilient and performant systems.`,
+      realWorldExamples: `
+*   **DNS Load Balancing**: Distributes traffic by returning different IP addresses for a domain name.
+*   **Hardware Load Balancers**: Dedicated physical devices (e.g., F5 BIG-IP).
+*   **Software Load Balancers**: Nginx, HAProxy, or cloud-based solutions like AWS Elastic Load Balancing (ELB) or Google Cloud Load Balancing.
+`,
+      diagram: `
+graph TD
+    Client --> LoadBalancer[Load Balancer]
+    LoadBalancer --> WebServer1[Web Server 1]
+    LoadBalancer --> WebServer2[Web Server 2]
+    LoadBalancer --> WebServer3[Web Server 3]
+`,
+      takeaway: `Load balancing is critical for distributing traffic, improving scalability, and ensuring high availability and fault tolerance in modern distributed systems.`
+    }
+  },
+  "indexing": {
+    title: "Database Indexing",
+    subtitle: "Data structure optimization for faster database queries",
+    icon: Search,
+    difficulty: "Intermediate",
+    category: "Database",
+    readTime: "11 min read",
+    author: "System Design Team",
+    publishedDate: "Dec 12, 2024",
+    content: {
+      definition: `Database indexing is a data structuring technique used to quickly locate and access data in a database. Indexes are special lookup tables that the database search engine can use to speed up data retrieval.`,
+      whyItMatters: `Indexing significantly improves the performance of read-heavy database operations by reducing the amount of data the database needs to scan. It's a crucial optimization technique in system design. In interviews, understanding indexing shows an appreciation for database internals and performance tuning.`,
+      realWorldExamples: `
+*   **B-Tree Indexes**: The most common type of index, used in relational databases like PostgreSQL, MySQL, and SQL Server.
+*   **Hash Indexes**: Used for equality lookups, faster than B-trees for exact matches but not suitable for range queries.
+*   **Full-Text Indexes**: Used for searching text within large text columns.
+`,
+      diagram: `
+graph TD
+    UserQuery[User Query] --> Database[Database]
+    Database --> Index[Index (B-Tree)]
+    Index --> DataPages[Data Pages]
+    DataPages --> Result[Query Result]
+`,
+      takeaway: `Indexing is a powerful database optimization technique that speeds up data retrieval. While improving read performance, it adds overhead to write operations and consumes storage, requiring careful consideration.`
+    }
   }
 };
 
 interface LibraryPageProps {
-  params: {
-    slug: string;
-  };
+  params: Promise<{ slug: string }>;
 }
 
 export default function LibraryPage({ params }: LibraryPageProps) {
-  const concept = conceptsData[params.slug as keyof typeof conceptsData];
-  
+  const [concept, setConcept] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadConcept = async () => {
+      setLoading(true);
+      // Simulate API call or data fetching
+      const timer = setTimeout(async () => {
+        const { slug } = await params;
+        const data = conceptsData[slug as keyof typeof conceptsData];
+        if (data) {
+          setConcept(data);
+          // Initialize Mermaid for diagrams
+          mermaid.initialize({ startOnLoad: true });
+        } else {
+          notFound();
+        }
+        setLoading(false);
+      }, 500); // Simulate network delay
+
+      return () => clearTimeout(timer);
+    };
+    
+    loadConcept();
+  }, [params]);
+
+  useEffect(() => {
+    if (concept && concept.content.diagram) {
+      mermaid.contentLoaded(); // Re-render mermaid diagrams if content changes
+    }
+  }, [concept]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg">Loading concept...</div>
+        </div>
+      </div>
+    );
+  }
+
   if (!concept) {
     notFound();
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Back Navigation */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Link 
-            href="/library" 
-            className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Library
-          </Link>
-        </div>
-      </div>
-
       {/* Hero Section */}
-      <section className="bg-white">
+      <section className="bg-white border-b">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <concept.icon className="h-8 w-8 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
-                  {concept.title}
-                </h1>
-                <p className="text-lg text-gray-600">
-                  {concept.subtitle}
-                </p>
-              </div>
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="flex items-center justify-center mb-4">
+              <concept.icon className="h-12 w-12 text-blue-600" />
             </div>
-
-            {/* Meta Information */}
-            <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600 mb-8">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">
-                  {concept.difficulty}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full font-medium">
-                  {concept.category}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span>{concept.readTime}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span>By {concept.author}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                <span>{concept.publishedDate}</span>
-              </div>
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">
+              {concept.title}
+            </h1>
+            <p className="text-xl text-gray-600 mb-6">
+              {concept.subtitle}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-gray-500">
+              <span className="flex items-center gap-1">
+                <BookOpen className="h-4 w-4" /> {concept.readTime}
+              </span>
+              <span className="flex items-center gap-1">
+                <User className="h-4 w-4" /> {concept.author}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-4 w-4" /> {concept.publishedDate}
+              </span>
+              <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full">{concept.category}</span>
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">{concept.difficulty}</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* Content Section */}
-      <section className="py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            {params.slug === "sharding" ? (
-              <ShardingContent />
-            ) : (
-              <PlaceholderContent title={concept.title} />
+      <section className="py-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
+          <div className="bg-white p-8 rounded-lg shadow-sm prose prose-blue max-w-none">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Definition</h2>
+            <p className="text-gray-700 mb-6">{concept.content.definition}</p>
+
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Why it Matters</h2>
+            <p className="text-gray-700 mb-6">{concept.content.whyItMatters}</p>
+
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Real-World Examples</h2>
+            <div className="text-gray-700 mb-6" dangerouslySetInnerHTML={{ __html: concept.content.realWorldExamples }} />
+
+            {concept.content.diagram && (
+              <>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Diagram</h2>
+                <div className="bg-gray-100 p-4 rounded-md mb-6 overflow-auto">
+                  <pre className="mermaid text-sm">
+                    {concept.content.diagram}
+                  </pre>
+                </div>
+              </>
             )}
 
-            {/* Related Concepts */}
-            <RelatedConcepts currentSlug={params.slug} />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Takeaway for Interviews</h2>
+            <p className="text-gray-700 mb-6">{concept.content.takeaway}</p>
+
+            <div className="mt-10 flex justify-between items-center">
+              <Button variant="outline" asChild>
+                <Link href="/library">
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to Library
+                </Link>
+              </Button>
+              <Button>
+                Take Quiz <ExternalLink className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </section>
     </div>
-  );
-}
-
-function ShardingContent() {
-  return (
-    <div className="space-y-8">
-      {/* Definition */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Definition</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-lg text-gray-700 leading-relaxed">
-            <strong>Sharding</strong> is a database partitioning technique that splits data into smaller, 
-            more manageable pieces called shards. Each shard contains a subset of the data and can be 
-            stored on different servers, enabling horizontal scaling of database systems.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Why It's Used */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Why It's Used</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-green-50 rounded-lg">
-              <h3 className="font-semibold text-green-900 mb-2">Scale Horizontally</h3>
-              <p className="text-green-800 text-sm">Add more servers instead of upgrading single machine</p>
-            </div>
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2">Avoid Bottlenecks</h3>
-              <p className="text-blue-800 text-sm">Distribute load across multiple database instances</p>
-            </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <h3 className="font-semibold text-purple-900 mb-2">Improve Performance</h3>
-              <p className="text-purple-800 text-sm">Smaller datasets mean faster queries</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Common Strategies */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Common Strategies</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="p-4 border-l-4 border-blue-500 bg-blue-50">
-              <h3 className="font-semibold text-blue-900 mb-2">Range-Based Sharding</h3>
-              <p className="text-blue-800 text-sm mb-2">Partition data based on value ranges (e.g., user ID ranges)</p>
-              <p className="text-blue-700 text-xs">Example: Users 1-1000 in Shard 1, 1001-2000 in Shard 2</p>
-            </div>
-            <div className="p-4 border-l-4 border-green-500 bg-green-50">
-              <h3 className="font-semibold text-green-900 mb-2">Hash-Based Sharding</h3>
-              <p className="text-green-800 text-sm mb-2">Use hash function to determine shard (modulus of key)</p>
-              <p className="text-green-700 text-xs">Example: hash(user_id) % 3 determines which shard</p>
-            </div>
-            <div className="p-4 border-l-4 border-purple-500 bg-purple-50">
-              <h3 className="font-semibold text-purple-900 mb-2">Geo-Based Sharding</h3>
-              <p className="text-purple-800 text-sm mb-2">Partition by geographic location for data locality</p>
-              <p className="text-purple-700 text-xs">Example: US users in US shard, EU users in EU shard</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Challenges */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Challenges</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Rebalancing Shards</h3>
-                <p className="text-gray-600 text-sm">Data grows unevenly, requiring redistribution of data across shards</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Cross-Shard Queries</h3>
-                <p className="text-gray-600 text-sm">Joins across multiple shards are complex and slow</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Hotspot Shards</h3>
-                <p className="text-gray-600 text-sm">Uneven distribution can create overloaded shards</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Architecture Diagram */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Sharding Architecture</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-gray-100 p-6 rounded-lg">
-            <div className="text-center text-gray-600 mb-4">
-              <p className="text-sm italic">Typical sharding setup with shard router</p>
-            </div>
-            <div className="flex flex-col items-center space-y-4">
-              <div className="bg-white p-4 rounded-lg shadow-sm border">
-                <div className="text-center font-medium">Application</div>
-              </div>
-              <div className="text-gray-400">↓</div>
-              <div className="bg-white p-4 rounded-lg shadow-sm border">
-                <div className="text-center font-medium">Shard Router</div>
-                <div className="text-xs text-gray-500">(Determines which shard)</div>
-              </div>
-              <div className="text-gray-400">↓</div>
-              <div className="flex space-x-4">
-                <div className="bg-white p-4 rounded-lg shadow-sm border">
-                  <div className="text-center font-medium">DB Shard 1</div>
-                  <div className="text-xs text-gray-500">(Users 1-1000)</div>
-                </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm border">
-                  <div className="text-center font-medium">DB Shard 2</div>
-                  <div className="text-xs text-gray-500">(Users 1001-2000)</div>
-                </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm border">
-                  <div className="text-center font-medium">DB Shard 3</div>
-                  <div className="text-xs text-gray-500">(Users 2001-3000)</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Real-World Usage */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Real-World Usage</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2">MongoDB Auto-Sharding</h3>
-              <p className="text-blue-800 text-sm">Automatically distributes data across multiple shards based on shard key</p>
-            </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <h3 className="font-semibold text-green-900 mb-2">Twitter's Snowflake ID</h3>
-              <p className="text-green-800 text-sm">Uses timestamp-based IDs to distribute writes across time-based shards</p>
-            </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <h3 className="font-semibold text-purple-900 mb-2">Instagram's User Sharding</h3>
-              <p className="text-purple-800 text-sm">Shards user data by user ID ranges for horizontal scaling</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function PlaceholderContent({ title }: { title: string }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-gray-600">
-          This concept is currently under development. Check back soon for comprehensive content!
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function RelatedConcepts({ currentSlug }: { currentSlug: string }) {
-  const relatedConcepts = [
-    {
-      slug: "message-queues",
-      title: "Message Queues",
-      description: "Learn about asynchronous communication patterns",
-      icon: MessageSquare
-    },
-    {
-      slug: "cap-theorem",
-      title: "CAP Theorem",
-      description: "Understand consistency vs availability trade-offs",
-      icon: Zap
-    }
-  ];
-
-  return (
-    <Card className="mt-8">
-      <CardHeader>
-        <CardTitle className="text-2xl">Related Concepts</CardTitle>
-        <CardDescription>
-          Explore other core infrastructure concepts
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {relatedConcepts.map((concept) => (
-            <Link
-              key={concept.slug}
-              href={`/library/${concept.slug}`}
-              className="p-4 border rounded-lg hover:bg-gray-50 transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                  <concept.icon className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
-                    {concept.title}
-                  </h3>
-                  <p className="text-sm text-gray-600">{concept.description}</p>
-                </div>
-                <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   );
 }

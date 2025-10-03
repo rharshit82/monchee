@@ -1,0 +1,543 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import mermaid from "mermaid";
+import NotesSection from "@/components/notes-section";
+import DiscussionsSection from "@/components/discussions-section";
+
+// Complete deep dive data with interview and real-world takes
+const deepDives = {
+  "instagram-feed": {
+    title: "Instagram Feed",
+    description: "Design a social media feed system that can handle millions of users and real-time updates.",
+    problemStatement: "Design a social media feed system similar to Instagram that can handle millions of users, billions of posts, and provide real-time updates with low latency.",
+    background: "Social media feeds are one of the most complex distributed systems. They need to handle massive scale, real-time updates, personalization, and provide a seamless user experience. Instagram alone has over 1 billion users and processes millions of posts daily.",
+    image: "https://placehold.co/600x400",
+    interviewTake: {
+      title: "Interview Take",
+      description: "Simplified design focused on core components and trade-offs for interview settings.",
+      components: [
+        "API Gateway: Single entry point for all requests",
+        "User Service: Manages user profiles and relationships",
+        "Post Service: Handles post creation, storage, and retrieval",
+        "Feed Service: Generates personalized feeds for users",
+        "Cache Layer: Redis for fast feed retrieval",
+        "Database: PostgreSQL for user data, MongoDB for posts"
+      ],
+      tradeoffs: [
+        "Centralized vs Distributed: Centralized for simplicity, distributed for scale",
+        "SQL vs NoSQL: SQL for consistency, NoSQL for flexibility",
+        "Push vs Pull: Push for real-time, Pull for consistency",
+        "Caching Strategy: Write-through vs Write-behind"
+      ],
+      diagram: `graph TD
+        User[User] --> API[API Gateway]
+        API --> UserSvc[User Service]
+        API --> PostSvc[Post Service]
+        API --> FeedSvc[Feed Service]
+        FeedSvc --> Cache[(Redis Cache)]
+        PostSvc --> DB[(Database)]
+        UserSvc --> DB`
+    },
+    realWorldTake: {
+      title: "Real-World Take",
+      description: "Production-ready architecture with microservices, CDN, and advanced optimization techniques.",
+      components: [
+        "API Gateway: Kong/AWS API Gateway with rate limiting",
+        "User Service: Microservice with user profiles and relationships",
+        "Post Service: Handles media uploads, processing, and storage",
+        "Feed Service: ML-powered personalized feed generation",
+        "Media Service: Image/video processing with multiple formats",
+        "Notification Service: Real-time updates via WebSockets",
+        "Analytics Service: User behavior tracking and A/B testing",
+        "CDN: Global content delivery for media files"
+      ],
+      architecture: [
+        "Microservices architecture with independent scaling",
+        "Event-driven architecture with Apache Kafka",
+        "Multi-region deployment with data replication",
+        "Machine learning for content ranking and personalization",
+        "Advanced caching strategies (L1, L2, L3)",
+        "Database sharding by user ID and geographic region"
+      ],
+      technologies: [
+        "Backend: Go microservices with gRPC communication",
+        "Database: CockroachDB for global consistency, Redis for caching",
+        "Message Queue: Apache Kafka for event streaming",
+        "CDN: CloudFlare with edge computing capabilities",
+        "ML: TensorFlow for recommendation algorithms",
+        "Monitoring: Prometheus, Grafana, Jaeger for observability"
+      ],
+      diagram: `graph TD
+        User[User Device] --> CDN[CDN Edge]
+        CDN --> API[API Gateway]
+        API --> Auth[Auth Service]
+        API --> UserSvc[User Service]
+        API --> PostSvc[Post Service]
+        API --> FeedSvc[Feed Service]
+        PostSvc --> MediaSvc[Media Service]
+        FeedSvc --> ML[ML Service]
+        FeedSvc --> Cache[(Redis Cluster)]
+        PostSvc --> DB[(CockroachDB)]
+        UserSvc --> DB
+        FeedSvc --> Queue[Kafka]
+        Queue --> Notif[Notification Service]
+        Queue --> Analytics[Analytics Service]`
+    }
+  },
+  "uber-dispatch": {
+    title: "Uber Dispatch",
+    description: "Design a ride-sharing dispatch system that matches drivers with riders efficiently.",
+    problemStatement: "Design a ride-sharing dispatch system that can efficiently match drivers with riders in real-time, considering factors like location, driver availability, traffic conditions, and user preferences.",
+    background: "Ride-sharing dispatch systems are complex real-time systems that need to handle millions of requests, optimize for multiple objectives, and provide a seamless experience for both drivers and riders.",
+    image: "https://placehold.co/600x400",
+    interviewTake: {
+      title: "Interview Take",
+      description: "Simplified design focusing on core matching algorithm and basic architecture.",
+      components: [
+        "API Gateway: Single entry point for rider and driver requests",
+        "Dispatch Service: Core matching logic and coordination",
+        "Database: Stores rider requests, driver locations, and ride history",
+        "Cache: Redis for frequently accessed driver locations",
+        "Notification Service: Sends updates to drivers and riders"
+      ],
+      tradeoffs: [
+        "Centralized vs Distributed Matching: Centralized for simplicity, distributed for scale",
+        "SQL vs NoSQL: SQL for ACID properties, NoSQL for location queries",
+        "Real-time vs Batch Processing: Real-time for responsiveness, batch for efficiency",
+        "Geographic Sharding: By city vs by region vs global"
+      ],
+      diagram: `graph TD
+        R[Rider Request] --> API[API Gateway]
+        API --> DS[Dispatch Service]
+        DS --> MQ[(Kafka Stream)]
+        MQ --> Match[Matching Engine]
+        Match --> GeoDB[(Geo DB - Drivers)]
+        Match --> RiderDB[(Rider DB)]
+        Match --> Result[Driver Assignment]
+        Result --> Notify[Notification Service]
+        Notify --> App[Driver & Rider Apps]`
+    },
+    realWorldTake: {
+      title: "Real-World Take",
+      description: "Production system with ML-powered matching, real-time location tracking, and advanced optimization.",
+      components: [
+        "API Gateway: Kong with rate limiting and authentication",
+        "Rider Service: Handles ride requests and user management",
+        "Driver Service: Manages driver availability and location updates",
+        "Matching Service: ML-powered driver-rider matching with ETA prediction",
+        "Pricing Service: Dynamic pricing with surge pricing algorithms",
+        "Location Service: Real-time GPS tracking and geofencing",
+        "Notification Service: Multi-channel notifications (push, SMS, in-app)",
+        "Analytics Service: Performance monitoring and optimization",
+        "ML Service: ETA prediction, demand forecasting, route optimization"
+      ],
+      architecture: [
+        "Event-driven architecture with Apache Kafka for real-time events",
+        "Geographic sharding for location-based data",
+        "Machine learning models for matching optimization",
+        "Real-time data processing with Apache Flink",
+        "Multi-region deployment with data replication",
+        "Advanced caching with Redis Cluster"
+      ],
+      technologies: [
+        "Backend: Go microservices with gRPC for internal communication",
+        "Database: PostgreSQL for transactional data, Redis for caching",
+        "Message Queue: Apache Kafka for real-time event streaming",
+        "ML: Python with TensorFlow for prediction models",
+        "Maps: Google Maps API for routing and geocoding",
+        "Monitoring: Prometheus, Grafana, Jaeger for observability"
+      ],
+      diagram: `graph TD
+        R[Rider Request] --> API[API Gateway]
+        API --> RS[Rider Service]
+        RS --> DS[Dispatch Service]
+        DS --> MQ[(Kafka Stream)]
+        MQ --> Match[Matching Engine]
+        Match --> ML[ML Service]
+        Match --> GeoDB[(Geo DB - Drivers)]
+        Match --> RiderDB[(Rider DB)]
+        Match --> Pricing[Pricing Service]
+        Match --> Result[Driver Assignment]
+        Result --> Notify[Notification Service]
+        Notify --> App[Driver & Rider Apps]
+        DS --> Location[Location Service]
+        Location --> GPS[GPS Tracking]`
+    }
+  },
+  "netflix-streaming": {
+    title: "Netflix Streaming",
+    description: "Build a video streaming platform with global content delivery, recommendation systems, and massive scale infrastructure.",
+    problemStatement: "Design a video streaming platform similar to Netflix that can deliver high-quality video content to millions of users globally with adaptive bitrate streaming and personalized recommendations.",
+    background: "Video streaming platforms require sophisticated content delivery networks, adaptive bitrate streaming, recommendation systems, and global infrastructure to serve millions of users simultaneously with high-quality video content.",
+    image: "https://placehold.co/600x400",
+    interviewTake: {
+      title: "Interview Take",
+      description: "Simplified design focusing on core streaming components and basic CDN architecture.",
+      components: [
+        "Content Database: Stores video metadata and user preferences",
+        "CDN: Content Delivery Network for global video distribution",
+        "Streaming Service: Handles video streaming requests",
+        "User Service: Manages user accounts and viewing history",
+        "Recommendation Service: Basic content recommendation logic"
+      ],
+      tradeoffs: [
+        "CDN vs Direct Streaming: CDN for global reach, direct for cost control",
+        "Caching Strategy: Edge caching vs origin server caching",
+        "Video Formats: Single format vs multiple bitrates",
+        "Database: SQL for consistency vs NoSQL for scalability"
+      ],
+      diagram: `graph TD
+        User[User Device] --> CDN[CDN Edge Server]
+        CDN --> NS[Netflix Streaming Service]
+        NS --> Storage[Video Storage DB]
+        NS --> Encode[Transcoding/Encoding Service]
+        NS --> DRM[DRM Service]`
+    },
+    realWorldTake: {
+      title: "Real-World Take",
+      description: "Production Netflix architecture with Open Connect CDN, adaptive bitrate streaming, and advanced recommendation systems.",
+      components: [
+        "Open Connect CDN: Netflix's global content delivery network",
+        "Streaming Service: Handles adaptive bitrate streaming requests",
+        "Content Service: Manages video metadata and content catalog",
+        "User Service: User profiles, viewing history, and preferences",
+        "Recommendation Service: ML-powered content recommendation",
+        "Encoding Service: Multi-format video transcoding and optimization",
+        "DRM Service: Content protection and licensing",
+        "Analytics Service: Viewing behavior and performance monitoring",
+        "A/B Testing Service: Content recommendation experimentation"
+      ],
+      architecture: [
+        "Global CDN with edge servers in 190+ countries",
+        "Adaptive bitrate streaming (ABR) with multiple quality levels",
+        "Machine learning for personalized recommendations",
+        "Microservices architecture with independent scaling",
+        "Event-driven architecture for real-time updates",
+        "Multi-region deployment with data replication"
+      ],
+      technologies: [
+        "CDN: Open Connect with custom hardware and software",
+        "Backend: Java microservices with Spring Boot",
+        "Database: Cassandra for metadata, Redis for caching",
+        "ML: Python with TensorFlow for recommendation algorithms",
+        "Video: H.264/H.265 encoding with multiple bitrates",
+        "Monitoring: Netflix's internal monitoring and alerting systems"
+      ],
+      diagram: `graph TD
+        User[User Device] --> CDN[Open Connect CDN]
+        CDN --> Edge[Edge Server]
+        Edge --> Stream[Streaming Service]
+        Stream --> Content[Content Service]
+        Content --> Meta[(Content Metadata)]
+        Stream --> Rec[Recommendation Service]
+        Rec --> ML[ML Service]
+        Rec --> User[(User Preferences)]
+        Stream --> Encode[Encoding Service]
+        Stream --> DRM[DRM Service]
+        Stream --> Analytics[Analytics Service]`
+    }
+  }
+};
+
+export default function DeepDivePage({ params }: { params: { slug: string } }) {
+  const [deepDive, setDeepDive] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  const { isGenerating } = usePDFExport();
+
+  const handleShare = () => {
+    const url = window.location.href;
+    const title = `I just completed the ${deepDive?.title} Deep Dive on Monchee 🚀`;
+    const summary = deepDive?.problemStatement || '';
+    const source = 'Monchee.com';
+    shareToLinkedIn(url, title, summary, source);
+  };
+
+  const handleComplete = async () => {
+    try {
+      const response = await fetch('/api/deep-dive/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ slug: params.slug }),
+      );
+
+      if (response.ok) {
+        setIsCompleted(true);
+      }
+    } catch (error) {
+      console.error('Error completing deep dive:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => {
+      const data = deepDives[params.slug as keyof typeof deepDives];
+      if (data) {
+        setDeepDive(data);
+      }
+      setLoading(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [params.slug]);
+
+  useEffect(() => {
+    mermaid.contentLoaded();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <div className="text-lg">Loading deep dive...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!deepDive) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Deep Dive Not Found</h1>
+          <p className="text-gray-600">The deep dive you're looking for doesn't exist.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <section className="bg-white border-b">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+              {deepDive.title}
+            </h1>
+            <p className="text-xl text-gray-600 mb-8">
+              {deepDive.problemStatement}
+            </p>
+            <div className="mt-6 flex justify-center space-x-4">
+              <Button onClick={() => {}} disabled={isGenerating}>
+                {isGenerating ? 'Generating PDF...' : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                  </>
+                )}
+              </Button>
+              <Button variant="outline" onClick={handleShare}>
+                <Share2 className="mr-2 h-4 w-4" />
+                Share to LinkedIn
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
+            <Tabs defaultValue="interview" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-8">
+                <TabsTrigger value="interview" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Interview Take
+                </TabsTrigger>
+                <TabsTrigger value="realworld" className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Real-World Take
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="interview" id="deep-dive-content">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-6 w-6 text-blue-500" />
+                      {deepDive.interviewTake.title}
+                    </CardTitle>
+                    <CardDescription className="text-lg">
+                      {deepDive.interviewTake.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-8">
+                    {/* Components */}
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <Code className="h-6 w-6 text-purple-500" />
+                        Core Components
+                      </h3>
+                      <ul className="space-y-3">
+                        {deepDive.interviewTake.components.map((component: string, index: number) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <span className="text-purple-500 mt-1">•</span>
+                            <span className="text-gray-700">{component}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Trade-offs */}
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <Lightbulb className="h-6 w-6 text-yellow-500" />
+                        Key Trade-offs
+                      </h3>
+                      <ul className="space-y-3">
+                        {deepDive.interviewTake.tradeoffs.map((tradeoff: string, index: number) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <span className="text-yellow-500 mt-1">•</span>
+                            <span className="text-gray-700">{tradeoff}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Diagram */}
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4">Architecture Diagram</h3>
+                      <div className="bg-gray-50 p-6 rounded-lg">
+                        <div className="mermaid">
+                          {deepDive.interviewTake.diagram}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="realworld" id="deep-dive-content">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Globe className="h-6 w-6 text-green-500" />
+                      {deepDive.realWorldTake.title}
+                    </CardTitle>
+                    <CardDescription className="text-lg">
+                      {deepDive.realWorldTake.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-8">
+                    {/* Components */}
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <Code className="h-6 w-6 text-purple-500" />
+                        Production Components
+                      </h3>
+                      <ul className="space-y-3">
+                        {deepDive.realWorldTake.components.map((component: string, index: number) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <span className="text-purple-500 mt-1">•</span>
+                            <span className="text-gray-700">{component}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Architecture */}
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <Zap className="h-6 w-6 text-orange-500" />
+                        Architecture Patterns
+                      </h3>
+                      <ul className="space-y-3">
+                        {deepDive.realWorldTake.architecture.map((pattern: string, index: number) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <span className="text-orange-500 mt-1">•</span>
+                            <span className="text-gray-700">{pattern}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Technologies */}
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <Target className="h-6 w-6 text-red-500" />
+                        Technology Stack
+                      </h3>
+                      <ul className="space-y-3">
+                        {deepDive.realWorldTake.technologies.map((tech: string, index: number) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <span className="text-red-500 mt-1">•</span>
+                            <span className="text-gray-700">{tech}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Diagram */}
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4">Production Architecture Diagram</h3>
+                      <div className="bg-gray-50 p-6 rounded-lg">
+                        <div className="mermaid">
+                          {deepDive.realWorldTake.diagram}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </section>
+
+      {/* Action Buttons */}
+      <section className="py-8 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-center space-x-4">
+            <Button 
+              onClick={handleComplete}
+              disabled={isCompleted}
+              className={isCompleted ? "bg-green-600 hover:bg-green-700" : ""}
+              size="lg"
+            >
+              {isCompleted ? (
+                <>
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  Completed
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  Mark as Read
+                </>
+              )}
+            </Button>
+            <Button variant="outline" size="lg">
+              <Clock className="mr-2 h-5 w-5" />
+              Take Quiz (Coming Soon)
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Notes Section */}
+      <NotesSection 
+        type="deep-dive" 
+        ref={params.slug} 
+        title={deepDive.title}
+      />
+
+      {/* Discussions Section */}
+      <DiscussionsSection 
+        type="deep-dive" 
+        ref={params.slug} 
+        title={deepDive.title}
+      />
+    </div>
+  );
+}

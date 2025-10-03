@@ -1,5 +1,5 @@
 import prisma from './prisma';
-
+export { default as prisma } from './prisma';
 export async function getUserProfileByClerkId(clerkId: string) {
   return await prisma.userProfile.findUnique({
     where: { clerkId }

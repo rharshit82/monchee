@@ -1,0 +1,408 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, BookOpen, Clock, User, ExternalLink, Database, MessageSquare, Zap, Loader, Search, Lightbulb, Target, Globe, Code } from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import mermaid from "mermaid";
+
+// Complete concepts data with full content
+const conceptsData = {
+  "sharding": {
+    title: "Sharding",
+    subtitle: "Database partitioning technique for horizontal scaling",
+    icon: Database,
+    difficulty: "Intermediate",
+    category: "Database",
+    readTime: "12 min read",
+    author: "System Design Team",
+    publishedDate: "Dec 22, 2024",
+    definition: "Sharding is a database partitioning technique that splits large datasets into smaller, manageable pieces called 'shards' that are distributed across multiple database servers. Each shard contains a subset of the data, allowing the system to scale horizontally by adding more servers.",
+    whyItMatters: "Sharding is crucial for handling massive datasets that exceed the capacity of a single database server. It enables horizontal scaling, improves query performance by reducing the amount of data each server needs to process, and provides fault isolation - if one shard fails, others continue operating.",
+    realWorldExamples: [
+      "Instagram: Shards user data by user ID, with each shard containing photos and metadata for specific user ranges",
+      "Uber: Shards trip data by city/region, with each shard handling rides for specific geographic areas",
+      "WhatsApp: Shards messages by phone number, distributing billions of messages across multiple database clusters",
+      "Twitter: Shards tweets by user ID, enabling the platform to handle millions of daily posts"
+    ],
+    interviewTakeaway: "When discussing sharding in interviews, focus on: 1) Shard key selection (avoid hotspots), 2) Data distribution strategy, 3) Cross-shard queries and their challenges, 4) Rebalancing strategies, 5) Failure handling and data consistency across shards."
+  },
+  "message-queues": {
+    title: "Message Queues",
+    subtitle: "Asynchronous communication pattern for decoupling services",
+    icon: MessageSquare,
+    difficulty: "Beginner",
+    category: "Communication",
+    readTime: "10 min read",
+    author: "System Design Team",
+    publishedDate: "Dec 20, 2024",
+    definition: "Message queues are asynchronous communication mechanisms that allow different parts of a system to exchange information without being directly connected. They act as intermediaries, storing messages until the receiving service is ready to process them.",
+    whyItMatters: "Message queues decouple services, making systems more resilient and scalable. They handle traffic spikes by buffering messages, enable reliable message delivery, and allow services to operate independently. This is essential for microservices architectures and event-driven systems.",
+    realWorldExamples: [
+      "Amazon SQS: Handles order processing, inventory updates, and notification delivery for millions of orders",
+      "Apache Kafka: Powers real-time data streaming for companies like LinkedIn, Uber, and Netflix",
+      "RabbitMQ: Used by GitHub for webhook delivery and background job processing",
+      "Redis Pub/Sub: Enables real-time features like chat applications and live notifications"
+    ],
+    interviewTakeaway: "Key points for interviews: 1) Message ordering and delivery guarantees, 2) Dead letter queues for failed messages, 3) Message durability and persistence, 4) Scaling consumers and producers, 5) Choosing between different queue types (FIFO, priority, etc.)."
+  },
+  "cap-theorem": {
+    title: "CAP Theorem",
+    subtitle: "Consistency, Availability, and Partition tolerance trade-offs",
+    icon: Zap,
+    difficulty: "Advanced",
+    category: "Theory",
+    readTime: "15 min read",
+    author: "System Design Team",
+    publishedDate: "Dec 18, 2024",
+    definition: "The CAP theorem states that in a distributed system, you can only guarantee two out of three properties: Consistency (all nodes see the same data), Availability (system remains operational), and Partition tolerance (system continues working despite network failures).",
+    whyItMatters: "The CAP theorem is fundamental for understanding distributed system design trade-offs. It helps engineers make informed decisions about database choices, system architecture, and consistency models. Understanding CAP is crucial for designing systems that meet specific business requirements.",
+    realWorldExamples: [
+      "CP Systems: MongoDB, HBase - prioritize consistency and partition tolerance, sacrifice availability during network splits",
+      "AP Systems: Cassandra, DynamoDB - prioritize availability and partition tolerance, may serve stale data temporarily",
+      "CA Systems: Traditional SQL databases - prioritize consistency and availability, but fail during network partitions",
+      "Hybrid Approaches: Many systems use different consistency models for different operations to optimize for their use case"
+    ],
+    interviewTakeaway: "In interviews, explain: 1) The three properties and their trade-offs, 2) Real-world examples of CP vs AP systems, 3) How to choose based on business requirements, 4) The difference between strong and eventual consistency, 5) How modern systems often use hybrid approaches."
+  },
+  "load-balancing": {
+    title: "Load Balancing",
+    subtitle: "Distributing requests across multiple servers for better performance",
+    icon: Loader,
+    difficulty: "Beginner",
+    category: "Infrastructure",
+    readTime: "8 min read",
+    author: "System Design Team",
+    publishedDate: "Dec 15, 2024",
+    definition: "Load balancing is the process of distributing incoming network traffic across multiple servers to ensure no single server becomes overwhelmed. It improves application availability, responsiveness, and helps handle traffic spikes by spreading the load.",
+    whyItMatters: "Load balancing is essential for building scalable, reliable systems. It prevents server overload, provides fault tolerance by routing traffic away from failed servers, and enables horizontal scaling. It's a fundamental building block for high-traffic applications and microservices architectures.",
+    realWorldExamples: [
+      "AWS Application Load Balancer: Used by Netflix, Airbnb, and Slack to distribute traffic across thousands of servers",
+      "Google Cloud Load Balancer: Handles billions of requests for YouTube, Gmail, and Google Search",
+      "Nginx: Powers load balancing for companies like Dropbox, Pinterest, and GitHub",
+      "HAProxy: Used by Reddit, Stack Overflow, and many other high-traffic websites"
+    ],
+    interviewTakeaway: "Focus on: 1) Different load balancing algorithms (round-robin, least connections, weighted), 2) Health checks and failover mechanisms, 3) Session persistence and sticky sessions, 4) Load balancer placement (L4 vs L7), 5) Scaling load balancers themselves."
+  },
+  "indexing": {
+    title: "Database Indexing",
+    subtitle: "Data structure optimization for faster database queries",
+    icon: Search,
+    difficulty: "Intermediate",
+    category: "Database",
+    readTime: "11 min read",
+    author: "System Design Team",
+    publishedDate: "Dec 12, 2024",
+    definition: "Database indexing is a data structure technique that creates additional metadata to speed up data retrieval operations. An index is like a book's table of contents - it provides a quick way to locate specific data without scanning the entire dataset.",
+    whyItMatters: "Indexes dramatically improve query performance, especially for large datasets. They reduce the time complexity of lookups from O(n) to O(log n) or even O(1). However, they come with trade-offs: increased storage space and slower write operations due to index maintenance overhead.",
+    realWorldExamples: [
+      "E-commerce: Product search by category, price range, or brand uses composite indexes for fast filtering",
+      "Social Media: User posts are indexed by user_id and timestamp for efficient timeline generation",
+      "Financial Systems: Transaction records are indexed by account_id and date for quick balance calculations",
+      "Search Engines: Inverted indexes map words to documents for fast full-text search capabilities"
+    ],
+    interviewTakeaway: "Key interview points: 1) Types of indexes (B-tree, hash, bitmap, composite), 2) Index selection criteria and query optimization, 3) Trade-offs between read and write performance, 4) Index maintenance and fragmentation, 5) When NOT to use indexes (small tables, frequently updated columns)."
+  }
+};
+
+function getMermaidDiagram(slug: string) {
+  switch (slug) {
+    case 'sharding':
+      return `graph TD
+        App[Application] --> LB[Load Balancer]
+        LB --> Shard1[(Shard 1<br/>Users 1-1000)]
+        LB --> Shard2[(Shard 2<br/>Users 1001-2000)]
+        LB --> Shard3[(Shard 3<br/>Users 2001-3000)]
+        Shard1 --> Replica1[(Replica 1)]
+        Shard2 --> Replica2[(Replica 2)]
+        Shard3 --> Replica3[(Replica 3)]`;
+    case 'message-queues':
+      return `graph LR
+        Producer[Producer] --> Queue[Message Queue]
+        Queue --> Consumer1[Consumer 1]
+        Queue --> Consumer2[Consumer 2]
+        Queue --> Consumer3[Consumer 3]
+        Queue --> DLQ[Dead Letter Queue]
+        Consumer1 --> DB[(Database)]
+        Consumer2 --> API[External API]
+        Consumer3 --> Cache[Cache]`;
+    case 'cap-theorem':
+      return `graph TD
+        Client[Client] --> Node1[Node 1]
+        Client --> Node2[Node 2]
+        Client --> Node3[Node 3]
+        Node1 <--> Node2
+        Node2 <--> Node3
+        Node1 <--> Node3
+        Node1 --> DB1[(Database 1)]
+        Node2 --> DB2[(Database 2)]
+        Node3 --> DB3[(Database 3)]`;
+    case 'load-balancing':
+      return `graph TD
+        Users[Users] --> LB[Load Balancer]
+        LB --> Server1[Server 1]
+        LB --> Server2[Server 2]
+        LB --> Server3[Server 3]
+        Server1 --> DB1[(Database 1)]
+        Server2 --> DB2[(Database 2)]
+        Server3 --> DB3[(Database 3)]
+        LB --> Health[Health Checker]`;
+    case 'indexing':
+      return `graph TD
+        Query[SQL Query] --> Index[Index]
+        Index --> Data[(Table Data)]
+        Index --> BTree[B-Tree Structure]
+        BTree --> Leaf1[Leaf Node 1]
+        BTree --> Leaf2[Leaf Node 2]
+        BTree --> Leaf3[Leaf Node 3]
+        Leaf1 --> Row1[Row 1]
+        Leaf2 --> Row2[Row 2]
+        Leaf3 --> Row3[Row 3]`;
+    default:
+      return `graph TD
+        A[System] --> B[Component 1]
+        A --> C[Component 2]
+        A --> D[Component 3]`;
+  }
+}
+
+export default function LibraryPage({ params }: { params: { slug: string } }) {
+  const [concept, setConcept] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [mermaidRendered, setMermaidRendered] = useState(false);
+
+    }, 100); // Small delay to simulate network
+  useEffect(() => {
+    setLoading(true);
+    // Simulate API call or data fetching
+    const timer = setTimeout(() => {
+      const slug = params.slug;
+      const data = conceptsData[slug as keyof typeof conceptsData];
+      
+      if (data) {
+        setConcept(data);
+      } else {
+        notFound();
+      }
+      setLoading(false);
+    }, 100); // Small delay to simulate network
+
+    return () => clearTimeout(timer);
+  }, [params.slug]);
+
+  useEffect(() => {
+    if (!mermaidRendered && concept) {
+      mermaid.initialize({ startOnLoad: true });
+      mermaid.init();
+      setMermaidRendered(true);
+    }
+  }, [mermaidRendered, concept]);
+    return () => clearTimeout(timer);
+    if (!mermaidRendered && concept) {
+      mermaid.initialize({ startOnLoad: true });
+      mermaid.init();
+      setMermaidRendered(true);
+    }
+  }, [mermaidRendered, concept]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg">Loading concept...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!concept) {
+    notFound();
+  }
+
+  const IconComponent = concept.icon;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <Link href="/library" className="flex items-center text-gray-600 hover:text-gray-900">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Library
+            </Link>
+            <div className="flex items-center space-x-4">
+              <Badge variant="outline" className="flex items-center">
+                <IconComponent className="h-3 w-3 mr-1" />
+                {concept.category}
+              </Badge>
+              <Badge variant="secondary">{concept.difficulty}</Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero Section */}
+      <section className="bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <IconComponent className="h-8 w-8 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900">{concept.title}</h1>
+                <p className="text-xl text-gray-600 mt-2">{concept.subtitle}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-6 text-sm text-gray-500 mb-8">
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-1" />
+                {concept.readTime}
+              </div>
+              <div className="flex items-center">
+                <User className="h-4 w-4 mr-1" />
+                {concept.author}
+              </div>
+              <div className="flex items-center">
+                <BookOpen className="h-4 w-4 mr-1" />
+                {concept.publishedDate}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Content */}
+      <section className="py-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <Tabs defaultValue="overview" className="space-y-8">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="examples">Real Examples</TabsTrigger>
+                <TabsTrigger value="interview">Interview Tips</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="space-y-8">
+                {/* Definition */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Target className="h-5 w-5 mr-2 text-blue-600" />
+                      What is {concept.title}?
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 leading-relaxed">{concept.definition}</p>
+                  </CardContent>
+                </Card>
+
+                {/* Why It Matters */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Lightbulb className="h-5 w-5 mr-2 text-yellow-600" />
+                      Why It Matters in System Design
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 leading-relaxed">{concept.whyItMatters}</p>
+                  </CardContent>
+                </Card>
+
+                {/* Diagram */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Code className="h-5 w-5 mr-2 text-green-600" />
+                      System Architecture
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-gray-50 p-6 rounded-lg">
+                      <div className="mermaid">
+                        {getMermaidDiagram(params.slug)}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="examples" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Globe className="h-5 w-5 mr-2 text-purple-600" />
+                      Real-World Examples
+                    </CardTitle>
+                    <CardDescription>
+                      How major companies use {concept.title} in production
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {concept.realWorldExamples.map((example: string, index: number) => (
+                        <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                          <p className="text-gray-700">{example}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="interview" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Target className="h-5 w-5 mr-2 text-red-600" />
+                      Interview Takeaway
+                    </CardTitle>
+                    <CardDescription>
+                      Key points to remember for technical interviews
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <p className="text-gray-700 leading-relaxed">{concept.interviewTakeaway}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer Actions */}
+      <section className="bg-white border-t py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto flex justify-between items-center">
+            <Link href="/library">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Library
+              </Button>
+            </Link>
+            <div className="flex space-x-4">
+              <Button variant="outline">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+              <Button>
+                <BookOpen className="h-4 w-4 mr-2" />
+                Read More
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

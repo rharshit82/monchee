@@ -4,9 +4,10 @@ import { prisma } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const { userId } = await auth();
     
     if (!userId) {
@@ -51,7 +52,7 @@ export async function POST(
       ]
     };
 
-    const modules = trackModules[params.slug];
+    const modules = trackModules[resolvedParams.slug];
     if (!modules) {
       return NextResponse.json({ error: 'Track not found' }, { status: 404 });
     }
@@ -134,7 +135,7 @@ export async function POST(
         }
       };
 
-      const trackBadge = trackBadges[params.slug as keyof typeof trackBadges];
+      const trackBadge = trackBadges[resolvedParams.slug as keyof typeof trackBadges];
       
       if (trackBadge) {
         const existingBadge = await prisma.badge.findFirst({
@@ -158,6 +159,12 @@ export async function POST(
       }
     }
 
+    const trackBadges = {
+      "beginner": "Foundation Builder",
+      "intermediate": "System Scaler",
+      "advanced": "Distributed Architect"
+    };
+    
     const progressPercentage = Math.round((completedModules / modules.length) * 100);
 
     return NextResponse.json({
@@ -165,7 +172,7 @@ export async function POST(
       progress: progressPercentage,
       trackCompleted,
       message: trackCompleted 
-        ? `Track completed! You earned the ${trackBadges[params.slug as keyof typeof trackBadges]?.name} badge!`
+        ? `Track completed! You earned the ${trackBadges[resolvedParams.slug as keyof typeof trackBadges]?.name} badge!`
         : `Module completed! Progress: ${progressPercentage}%`
     });
 

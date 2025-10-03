@@ -1,290 +1,310 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 import { 
   BookOpen, 
   Code, 
   Brain, 
-  Target,
-  Trophy,
+  Target, 
+  CheckCircle, 
   Clock,
-  Users,
+  Award,
   ArrowLeft,
   ArrowRight,
-  Star,
-  Award,
-  CheckCircle,
-  Lock,
-  Play,
-  Loader2
+  ExternalLink
 } from "lucide-react";
+import Link from "next/link";
 
-interface TrackModule {
+interface TrackItem {
   id: string;
+  type: "cheatsheet" | "library" | "deep-dive" | "quiz" | "lab" | "scenario";
   title: string;
-  type: 'cheatsheet' | 'library' | 'quiz' | 'lab' | 'deep-dive';
   slug: string;
-  order: number;
-  status: 'locked' | 'in-progress' | 'completed';
+  description: string;
+  completed: boolean;
+  estimatedTime: string;
 }
 
 interface Track {
   id: string;
+  slug: string;
   title: string;
   description: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  estimatedTime: string;
-  modules: TrackModule[];
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  duration: string;
+  totalItems: number;
+  completedItems: number;
+  progressPercentage: number;
   badge: {
     name: string;
-    icon: string;
     description: string;
+    icon: string;
   };
-  color: string;
+  items: TrackItem[];
 }
 
+// Mock data - in a real app, this would come from an API
 const tracksData: Record<string, Track> = {
-  'beginner': {
-    id: 'beginner',
-    title: 'Beginner Track',
-    description: 'Master the fundamentals of system design with caching, sharding, and core concepts.',
-    difficulty: 'Beginner',
-    estimatedTime: '2-3 weeks',
-    color: 'bg-green-500',
+  "beginner": {
+    id: "1",
+    slug: "beginner",
+    title: "System Design Foundations",
+    description: "Master the fundamentals of system design with essential concepts, patterns, and best practices. This track covers the core building blocks you need to understand before diving into more complex distributed systems.",
+    difficulty: "Beginner",
+    duration: "2-3 weeks",
+    totalItems: 4,
+    completedItems: 2,
+    progressPercentage: 50,
     badge: {
-      name: 'Beginner Architect',
-      icon: '🏆',
-      description: 'Completed the beginner system design track'
+      name: "Foundation Builder",
+      description: "Completed System Design Foundations track",
+      icon: "🏗️"
     },
-    modules: [
-      { id: 'caching-patterns', title: 'Caching Patterns', type: 'cheatsheet', slug: 'caching-patterns', order: 1, status: 'locked' },
-      { id: 'sharding', title: 'Database Sharding', type: 'library', slug: 'sharding', order: 2, status: 'locked' },
-      { id: 'cap-theorem', title: 'CAP Theorem', type: 'library', slug: 'cap-theorem', order: 3, status: 'locked' },
-      { id: 'caching-basics', title: 'Caching Basics Quiz', type: 'quiz', slug: 'caching-basics', order: 4, status: 'locked' }
+    items: [
+      {
+        id: "1",
+        type: "cheatsheet",
+        title: "Caching Patterns",
+        slug: "caching-patterns",
+        description: "Learn different caching strategies and their trade-offs in distributed systems",
+        completed: true,
+        estimatedTime: "15 min"
+      },
+      {
+        id: "2",
+        type: "library",
+        title: "Sharding",
+        slug: "sharding",
+        description: "Understand horizontal partitioning strategies for databases",
+        completed: true,
+        estimatedTime: "20 min"
+      },
+      {
+        id: "3",
+        type: "deep-dive",
+        title: "Instagram Feed",
+        slug: "instagram-feed",
+        description: "Deep dive into how Instagram's feed algorithm works and scales",
+        completed: false,
+        estimatedTime: "45 min"
+      },
+      {
+        id: "4",
+        type: "quiz",
+        title: "Basics of Scaling",
+        slug: "basics-scaling-quiz",
+        description: "Test your understanding of fundamental scaling concepts",
+        completed: false,
+        estimatedTime: "10 min"
+      }
     ]
   },
-  'intermediate': {
-    id: 'intermediate',
-    title: 'Intermediate Track',
-    description: 'Dive deeper into real-world systems with Instagram Feed, Uber Dispatch, and hands-on labs.',
-    difficulty: 'Intermediate',
-    estimatedTime: '4-6 weeks',
-    color: 'bg-blue-500',
+  "intermediate": {
+    id: "2",
+    slug: "intermediate",
+    title: "Scaling Systems",
+    description: "Learn how to design and scale distributed systems for high availability and performance. This track focuses on practical techniques for building systems that can handle millions of users.",
+    difficulty: "Intermediate",
+    duration: "3-4 weeks",
+    totalItems: 5,
+    completedItems: 1,
+    progressPercentage: 20,
     badge: {
-      name: 'System Designer',
-      icon: '🏗️',
-      description: 'Completed the intermediate system design track'
+      name: "System Scaler",
+      description: "Completed Scaling Systems track",
+      icon: "📈"
     },
-    modules: [
-      { id: 'instagram-feed', title: 'Instagram Feed Deep Dive', type: 'deep-dive', slug: 'instagram-feed', order: 1, status: 'locked' },
-      { id: 'uber-dispatch', title: 'Uber Dispatch Deep Dive', type: 'deep-dive', slug: 'uber-dispatch', order: 2, status: 'locked' },
-      { id: 'rate-limiter', title: 'Rate Limiter Lab', type: 'lab', slug: 'rate-limiter', order: 3, status: 'locked' },
-      { id: 'sharding-basics', title: 'Sharding Basics Quiz', type: 'quiz', slug: 'sharding-basics', order: 4, status: 'locked' }
+    items: [
+      {
+        id: "5",
+        type: "cheatsheet",
+        title: "Database Trade-offs",
+        slug: "database-tradeoffs",
+        description: "Key considerations when choosing database technologies",
+        completed: true,
+        estimatedTime: "15 min"
+      },
+      {
+        id: "6",
+        type: "library",
+        title: "Message Queues",
+        slug: "message-queues",
+        description: "Asynchronous communication patterns and queuing systems",
+        completed: false,
+        estimatedTime: "25 min"
+      },
+      {
+        id: "7",
+        type: "deep-dive",
+        title: "Uber Dispatch",
+        slug: "uber-dispatch",
+        description: "Real-time driver-rider matching system architecture",
+        completed: false,
+        estimatedTime: "50 min"
+      },
+      {
+        id: "8",
+        type: "lab",
+        title: "Rate Limiter",
+        slug: "rate-limiter",
+        description: "Build a distributed rate limiter for API protection",
+        completed: false,
+        estimatedTime: "2-3 hours"
+      },
+      {
+        id: "9",
+        type: "scenario",
+        title: "SQL vs NoSQL",
+        slug: "sql-vs-nosql-scenario",
+        description: "Choose the right database for different use cases",
+        completed: false,
+        estimatedTime: "20 min"
+      }
     ]
   },
-  'advanced': {
-    id: 'advanced',
-    title: 'Advanced Track',
-    description: 'Master distributed systems with Netflix Streaming, message queues, and complex architectures.',
-    difficulty: 'Advanced',
-    estimatedTime: '6-8 weeks',
-    color: 'bg-purple-500',
+  "advanced": {
+    id: "3",
+    slug: "advanced",
+    title: "Distributed Systems Mastery",
+    description: "Advanced concepts in distributed systems, consensus algorithms, and fault tolerance. This track covers the most challenging aspects of building reliable distributed systems.",
+    difficulty: "Advanced",
+    duration: "4-6 weeks",
+    totalItems: 5,
+    completedItems: 0,
+    progressPercentage: 0,
     badge: {
-      name: 'Distributed Pro',
-      icon: '⚡',
-      description: 'Completed the advanced distributed systems track'
+      name: "Distributed Architect",
+      description: "Completed Distributed Systems Mastery track",
+      icon: "🏛️"
     },
-    modules: [
-      { id: 'netflix-streaming', title: 'Netflix Streaming Deep Dive', type: 'deep-dive', slug: 'netflix-streaming', order: 1, status: 'locked' },
-      { id: 'message-queue', title: 'Message Queue Lab', type: 'lab', slug: 'message-queue', order: 2, status: 'locked' },
-      { id: 'url-shortener', title: 'URL Shortener Lab', type: 'lab', slug: 'url-shortener', order: 3, status: 'locked' },
-      { id: 'database-trade-offs', title: 'Database Trade-offs Quiz', type: 'quiz', slug: 'database-trade-offs', order: 4, status: 'locked' }
+    items: [
+      {
+        id: "10",
+        type: "cheatsheet",
+        title: "Consistency Models",
+        slug: "consistency-models",
+        description: "Understanding different consistency guarantees in distributed systems",
+        completed: false,
+        estimatedTime: "20 min"
+      },
+      {
+        id: "11",
+        type: "library",
+        title: "CAP Theorem",
+        slug: "cap-theorem",
+        description: "Consistency, Availability, and Partition tolerance trade-offs",
+        completed: false,
+        estimatedTime: "25 min"
+      },
+      {
+        id: "12",
+        type: "deep-dive",
+        title: "Netflix Streaming",
+        slug: "netflix-streaming",
+        description: "Content delivery and adaptive streaming at scale",
+        completed: false,
+        estimatedTime: "60 min"
+      },
+      {
+        id: "13",
+        type: "lab",
+        title: "Message Queue",
+        slug: "message-queue",
+        description: "Design and implement a reliable message queuing system",
+        completed: false,
+        estimatedTime: "4-6 hours"
+      },
+      {
+        id: "14",
+        type: "scenario",
+        title: "Eventual vs Strong Consistency",
+        slug: "consistency-scenario",
+        description: "Make trade-off decisions for consistency requirements",
+        completed: false,
+        estimatedTime: "25 min"
+      }
     ]
   }
 };
 
-export default function TrackDetailPage({ params }: { params: { slug: string } }) {
-  const { user, isLoaded } = useUser();
-  const { toast } = useToast();
+export default function TrackDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const [track, setTrack] = useState<Track | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchTrackData();
-    }
-  }, [user, params.slug]);
-
-  const fetchTrackData = async () => {
-    try {
-      setIsLoading(true);
+    const loadTrack = async () => {
+      const { slug } = await params;
+      setLoading(true);
       
-      // Get track data
-      const trackData = tracksData[params.slug];
-      if (!trackData) {
-        setTrack(null);
-        return;
-      }
-
-      // Fetch user's progress for this track
-      const response = await fetch(`/api/tracks/${params.slug}/progress`);
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Update module statuses based on user progress
-        const updatedModules = trackData.modules.map(module => {
-          const moduleProgress = data.modules.find((m: any) => m.id === module.id);
-          return {
-            ...module,
-            status: moduleProgress ? moduleProgress.status : 'locked'
-          };
-        });
-
-        // Unlock first module if track not started
-        if (data.progress === 0) {
-          updatedModules[0].status = 'in-progress';
+      const timer = setTimeout(() => {
+        const data = tracksData[slug];
+        if (data) {
+          setTrack(data);
         }
+        setLoading(false);
+      }, 500);
 
-        // Unlock next module if previous is completed
-        for (let i = 0; i < updatedModules.length - 1; i++) {
-          if (updatedModules[i].status === 'completed') {
-            updatedModules[i + 1].status = 'in-progress';
-          }
-        }
+      return () => clearTimeout(timer);
+    };
+    
+    loadTrack();
+  }, [params]);
 
-        setTrack({
-          ...trackData,
-          modules: updatedModules
-        });
-        setProgress(data.progress);
-        setIsCompleted(data.completed);
-      } else {
-        // If no progress, start with first module unlocked
-        const updatedModules = [...trackData.modules];
-        updatedModules[0].status = 'in-progress';
-        
-        setTrack({
-          ...trackData,
-          modules: updatedModules
-        });
-        setProgress(0);
-        setIsCompleted(false);
-      }
-    } catch (error) {
-      console.error('Error fetching track data:', error);
-    } finally {
-      setIsLoading(false);
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "Beginner": return "bg-green-100 text-green-800";
+      case "Intermediate": return "bg-blue-100 text-blue-800";
+      case "Advanced": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getModuleIcon = (type: string) => {
+  const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'cheatsheet': return <Target className="h-5 w-5" />;
-      case 'library': return <BookOpen className="h-5 w-5" />;
-      case 'quiz': return <Brain className="h-5 w-5" />;
-      case 'lab': return <Code className="h-5 w-5" />;
-      case 'deep-dive': return <BookOpen className="h-5 w-5" />;
+      case "cheatsheet": return <BookOpen className="h-5 w-5" />;
+      case "library": return <Brain className="h-5 w-5" />;
+      case "deep-dive": return <Target className="h-5 w-5" />;
+      case "quiz": return <CheckCircle className="h-5 w-5" />;
+      case "lab": return <Code className="h-5 w-5" />;
+      case "scenario": return <Award className="h-5 w-5" />;
       default: return <BookOpen className="h-5 w-5" />;
     }
   };
 
-  const getModuleTypeColor = (type: string) => {
+  const getTypeColor = (type: string) => {
     switch (type) {
-      case 'cheatsheet': return 'bg-orange-100 text-orange-800';
-      case 'library': return 'bg-indigo-100 text-indigo-800';
-      case 'quiz': return 'bg-blue-100 text-blue-800';
-      case 'lab': return 'bg-green-100 text-green-800';
-      case 'deep-dive': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "cheatsheet": return "text-green-600 bg-green-50";
+      case "library": return "text-purple-600 bg-purple-50";
+      case "deep-dive": return "text-blue-600 bg-blue-50";
+      case "quiz": return "text-orange-600 bg-orange-50";
+      case "lab": return "text-red-600 bg-red-50";
+      case "scenario": return "text-indigo-600 bg-indigo-50";
+      default: return "text-gray-600 bg-gray-50";
     }
   };
 
-  const getModuleUrl = (module: TrackModule) => {
-    switch (module.type) {
-      case 'cheatsheet': return `/cheatsheets/${module.slug}`;
-      case 'library': return `/library/${module.slug}`;
-      case 'quiz': return `/learn`;
-      case 'lab': return `/labs/${module.slug}`;
-      case 'deep-dive': return `/deep-dives/${module.slug}`;
-      default: return '#';
+  const getItemUrl = (item: TrackItem) => {
+    switch (item.type) {
+      case "cheatsheet": return `/cheatsheets/${item.slug}`;
+      case "library": return `/library/${item.slug}`;
+      case "deep-dive": return `/deep-dives/${item.slug}`;
+      case "quiz": return `/learn/quizzes`;
+      case "lab": return `/labs/${item.slug}`;
+      case "scenario": return `/learn/tradeoffs`;
+      default: return "#";
     }
   };
 
-  const handleModuleComplete = async (moduleId: string) => {
-    try {
-      const response = await fetch(`/api/tracks/${params.slug}/complete-module`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          moduleId
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        
-        if (result.trackCompleted) {
-          toast({
-            title: "🎉 Track Completed!",
-            description: `Congratulations! You've completed the ${track?.title} and earned the ${track?.badge.name} badge!`,
-          });
-          setIsCompleted(true);
-        } else {
-          toast({
-            title: "✅ Module Completed!",
-            description: `Great job! You've completed this module. Progress: ${result.progress}%`,
-          });
-        }
-        
-        // Refresh track data
-        fetchTrackData();
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to mark module as completed. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error completing module:', error);
-      toast({
-        title: "Error",
-        description: "Failed to mark module as completed. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (!isLoaded || isLoading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
-  }
-
-  if (!user) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Sign In Required</CardTitle>
-            <CardDescription>
-              Please sign in to access learning tracks and track your progress.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full">
-              <a href="/sign-in">Sign In</a>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <div className="text-lg">Loading track...</div>
+        </div>
       </div>
     );
   }
@@ -292,19 +312,9 @@ export default function TrackDetailPage({ params }: { params: { slug: string } }
   if (!track) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Track Not Found</CardTitle>
-            <CardDescription>
-              The track you're looking for doesn't exist.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full">
-              <a href="/tracks">Back to Tracks</a>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <div className="text-lg">Track not found</div>
+        </div>
       </div>
     );
   }
@@ -316,175 +326,155 @@ export default function TrackDetailPage({ params }: { params: { slug: string } }
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-4 mb-6">
-              <Button variant="outline" size="sm" asChild>
-                <a href="/tracks">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+              <Button variant="outline" asChild>
+                <Link href="/tracks">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Tracks
-                </a>
+                </Link>
               </Button>
+              <Badge className={getDifficultyColor(track.difficulty)}>
+                {track.difficulty}
+              </Badge>
+              <div className="flex items-center gap-1 text-sm text-gray-500">
+                <Clock className="h-4 w-4" />
+                <span>{track.duration}</span>
+              </div>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="md:col-span-2">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-4 h-4 rounded-full ${track.color}`}></div>
-                  <Badge className="bg-blue-100 text-blue-800">
-                    {track.difficulty}
-                  </Badge>
-                  {isCompleted && (
-                    <Badge className="bg-green-500 text-white">
-                      <Trophy className="h-3 w-3 mr-1" />
-                      Completed
-                    </Badge>
-                  )}
-                </div>
-                
-                <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="text-4xl">{track.badge.icon}</div>
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold text-gray-900 mb-3">
                   {track.title}
                 </h1>
-                <p className="text-xl text-gray-600 mb-6">
+                <p className="text-xl text-gray-600">
                   {track.description}
                 </p>
-                
-                <div className="flex items-center gap-6 text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{track.estimatedTime}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <BookOpen className="h-4 w-4" />
-                    <span>{track.modules.length} modules</span>
-                  </div>
-                </div>
               </div>
-              
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Progress</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Track Progress</span>
-                        <span className="font-medium">{progress}%</span>
-                      </div>
-                      <Progress value={progress} className="h-2" />
-                    </div>
-                  </CardContent>
-                </Card>
+            </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Badge</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-3">
-                      <div className="text-3xl">{track.badge.icon}</div>
-                      <div>
-                        <div className="font-medium">{track.badge.name}</div>
-                        <div className="text-sm text-gray-500">{track.badge.description}</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+            {/* Progress Section */}
+            <div className="bg-gray-50 rounded-lg p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Track Progress</h3>
+                <span className="text-sm text-gray-500">
+                  {track.completedItems} of {track.totalItems} completed
+                </span>
+              </div>
+              <Progress value={track.progressPercentage} className="h-3 mb-2" />
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>{track.progressPercentage}% complete</span>
+                <span>Earn the {track.badge.name} badge when complete</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Modules */}
-      <section className="py-12">
+      {/* Track Items */}
+      <section className="py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  Track Modules
-                </CardTitle>
-                <CardDescription>
-                  Complete modules in order to unlock the next one
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {track.modules.map((module, index) => (
-                    <div
-                      key={module.id}
-                      className={`flex items-center gap-4 p-4 rounded-lg border ${
-                        module.status === 'completed'
-                          ? 'bg-green-50 border-green-200'
-                          : module.status === 'in-progress'
-                          ? 'bg-blue-50 border-blue-200'
-                          : 'bg-gray-50 border-gray-200'
-                      }`}
-                    >
-                      {/* Module Number */}
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                        module.status === 'completed'
-                          ? 'bg-green-500 text-white'
-                          : module.status === 'in-progress'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-300 text-gray-600'
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">Learning Path</h2>
+            
+            <div className="space-y-4">
+              {track.items.map((item, index) => (
+                <Card key={item.id} className={`relative ${item.completed ? 'bg-green-50 border-green-200' : 'hover:shadow-md'} transition-all`}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      {/* Step Number */}
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                        item.completed 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-gray-200 text-gray-600'
                       }`}>
-                        {module.status === 'completed' ? (
-                          <CheckCircle className="h-4 w-4" />
-                        ) : (
-                          index + 1
-                        )}
+                        {item.completed ? <CheckCircle className="h-4 w-4" /> : index + 1}
                       </div>
 
-                      {/* Module Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-1">
-                          {getModuleIcon(module.type)}
-                          <h3 className="font-medium">{module.title}</h3>
-                          <Badge className={getModuleTypeColor(module.type)}>
-                            {module.type.replace('-', ' ')}
-                          </Badge>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg ${getTypeColor(item.type)}`}>
+                              {getTypeIcon(item.type)}
+                            </div>
+                            <div>
+                              <h3 className={`text-lg font-semibold ${
+                                item.completed ? 'text-green-800 line-through' : 'text-gray-900'
+                              }`}>
+                                {item.title}
+                              </h3>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {item.description}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <Clock className="h-4 w-4" />
+                            <span>{item.estimatedTime}</span>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {module.status === 'completed' && 'Completed'}
-                          {module.status === 'in-progress' && 'In Progress'}
-                          {module.status === 'locked' && 'Locked - Complete previous modules'}
-                        </div>
-                      </div>
 
-                      {/* Action Button */}
-                      <div className="flex items-center gap-2">
-                        {module.status === 'completed' && (
-                          <Badge className="bg-green-500 text-white">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Done
-                          </Badge>
-                        )}
-                        
-                        {module.status === 'in-progress' && (
-                          <Button asChild size="sm">
-                            <a href={getModuleUrl(module)}>
-                              <Play className="h-4 w-4 mr-2" />
-                              Start
-                            </a>
+                        {/* Action Button */}
+                        <div className="mt-4">
+                          <Button 
+                            asChild 
+                            variant={item.completed ? "outline" : "default"}
+                            className={item.completed ? "text-green-700 border-green-300" : ""}
+                          >
+                            <Link href={getItemUrl(item)}>
+                              {item.completed ? (
+                                <>
+                                  <CheckCircle className="mr-2 h-4 w-4" />
+                                  Completed - Review
+                                </>
+                              ) : (
+                                <>
+                                  Start {item.type === 'quiz' ? 'Quiz' : item.type === 'scenario' ? 'Scenario' : item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                                  <ArrowRight className="ml-2 h-4 w-4" />
+                                </>
+                              )}
+                            </Link>
                           </Button>
-                        )}
-                        
-                        {module.status === 'locked' && (
-                          <Button disabled size="sm">
-                            <Lock className="h-4 w-4 mr-2" />
-                            Locked
-                          </Button>
-                        )}
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </section>
+
+      {/* Completion Badge */}
+      {track.progressPercentage === 100 && (
+        <section className="bg-gradient-to-r from-green-50 to-blue-50 py-16">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="text-6xl mb-4">{track.badge.icon}</div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                Congratulations! You've earned the {track.badge.name} badge!
+              </h2>
+              <p className="text-lg text-gray-600 mb-8">
+                {track.badge.description}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button asChild size="lg">
+                  <Link href="/profile">
+                    View Your Badges
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link href="/tracks">
+                    Explore More Tracks
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

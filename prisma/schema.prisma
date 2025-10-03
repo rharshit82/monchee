@@ -11,6 +11,7 @@ model UserProfile {
   id        String   @id @default(cuid())
   clerkId   String   @unique
   username  String   @unique
+  displayName String?
   avatarUrl String?
   bio       String?
 
@@ -19,23 +20,30 @@ model UserProfile {
   xp        Int      @default(0)
   streak    Int      @default(0)
   lastActive DateTime?
+  joinedAt  DateTime @default(now())
+
+  // Daily goals
+  dailyGoal Int      @default(1)
+  dailyProgress Int  @default(0)
+  lastGoalReset DateTime @default(now())
 
   badges    Badge[]
   progress  Progress[]
   notes     Note[]
   comments  Comment[]
+  streakData Streak?
 }
 
 model Progress {
   id        String   @id @default(cuid())
   userId    String
   user      UserProfile @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
-  type      String   // "quiz", "lab", "deep-dive", "cheatsheet", "library"
-  ref       String   // slug or id of the item
-  status    String   // "completed" or "in-progress"
-  score     Int?     // For quizzes
-  points    Int?     // Points awarded
-  xp        Int?     // XP awarded
+  type      String
+  ref       String
+  status    String
+  score     Int?
+  points    Int?
+  xp        Int?
   createdAt DateTime @default(now())
 }
 
@@ -47,6 +55,7 @@ model Badge {
   icon      String?
   description String?
   category  String?
+  earnedAt  DateTime @default(now())
   createdAt DateTime @default(now())
 }
 
@@ -54,8 +63,8 @@ model Note {
   id        String   @id @default(cuid())
   userId    String
   user      UserProfile @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
-  type      String   // "lab" | "deep-dive" | "cheatsheet"
-  ref       String   // slug or id
+  type      String
+  ref       String
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -65,9 +74,24 @@ model Comment {
   id        String   @id @default(cuid())
   userId    String
   user      UserProfile @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
-  type      String   // "lab" | "deep-dive"
-  ref       String   // slug or id
+  type      String
+  ref       String
   content   String
+  parentId  String?
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Streak {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      UserProfile @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
+  current   Int      @default(0)
+  longest   Int      @default(0)
+  lastActive DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

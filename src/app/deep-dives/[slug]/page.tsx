@@ -1,156 +1,71 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { usePdfExport } from "@/hooks/use-pdf-export";
-import { shareToLinkedIn } from "@/lib/linkedin-share";
-import { Download, Share2, CheckCircle, Clock, Target, Lightbulb, Code } from "lucide-react";
-import mermaid from "mermaid";
-import NotesSection from "@/components/notes-section";
-import DiscussionsSection from "@/components/discussions-section";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { usePDFExport } from '@/hooks/use-pdf-export';
+import { shareToLinkedIn } from '@/lib/linkedin-share';
+import { deepDivesData } from '@/data/deep-dives-data';
 
-// Mock data - in a real app, this would come from an API
-const deepDives = {
-  "instagram-feed": {
-    title: "Instagram Feed",
-    description: "Design a social media feed system that can handle millions of users and real-time updates.",
-    problemStatement: "Design a social media feed system similar to Instagram that can handle millions of users, billions of posts, and provide real-time updates with low latency.",
-    background: "Social media feeds are one of the most complex distributed systems. They need to handle massive scale, real-time updates, personalization, and provide a seamless user experience. Instagram alone has over 1 billion users and processes millions of posts daily.",
-    challenges: [
-      "Handle millions of concurrent users",
-      "Process billions of posts and interactions",
-      "Provide real-time updates and notifications",
-      "Personalize content for each user",
-      "Maintain low latency for feed generation",
-      "Handle viral content and traffic spikes"
-    ],
-    architecture: {
-      components: [
-        "User Service: Manages user profiles and relationships",
-        "Post Service: Handles post creation, storage, and retrieval",
-        "Feed Service: Generates personalized feeds for users",
-        "Notification Service: Sends real-time updates",
-        "Media Service: Handles image/video uploads and processing",
-        "Analytics Service: Tracks user behavior and engagement"
-      ],
-      dataFlow: [
-        "User creates a post → Post Service",
-        "Post Service stores post → Database",
-        "Post Service triggers feed updates → Feed Service",
-        "Feed Service updates follower feeds → Cache",
-        "Users request feed → Feed Service returns cached data",
-        "Real-time updates → WebSocket connections"
-      ]
-    },
-    scalability: [
-      "Horizontal scaling with microservices architecture",
-      "Database sharding by user ID and post ID",
-      "CDN for media content delivery",
-      "Caching at multiple levels (Redis, CDN, Application)",
-      "Message queues for asynchronous processing",
-      "Load balancing across multiple regions"
-    ],
-    technologies: [
-      "Backend: Node.js, Python, or Java microservices",
-      "Database: PostgreSQL, MongoDB for different data types",
-      "Cache: Redis for feed data and session storage",
-      "Message Queue: Apache Kafka for event streaming",
-      "CDN: CloudFlare or AWS CloudFront for media",
-      "Real-time: WebSockets or Server-Sent Events"
-    ]
-  },
-  "uber-dispatch": {
-    title: "Uber Dispatch",
-    description: "Design a ride-sharing dispatch system that matches drivers with riders efficiently.",
-    problemStatement: "Design a ride-sharing dispatch system that can efficiently match drivers with riders in real-time, considering factors like location, driver availability, traffic conditions, and user preferences.",
-    background: "Ride-sharing dispatch systems are complex real-time systems that need to handle millions of requests, optimize for multiple objectives, and provide a seamless experience for both drivers and riders.",
-    challenges: [
-      "Real-time matching of drivers and riders",
-      "Optimizing for multiple factors (distance, time, cost)",
-      "Handling dynamic pricing and surge pricing",
-      "Managing driver availability and location updates",
-      "Providing accurate ETAs and route optimization",
-      "Scaling to handle peak demand periods"
-    ],
-    architecture: {
-      components: [
-        "Rider Service: Handles ride requests and user management",
-        "Driver Service: Manages driver availability and location",
-        "Matching Service: Core algorithm for driver-rider matching",
-        "Pricing Service: Dynamic pricing and surge pricing logic",
-        "Notification Service: Real-time updates to drivers and riders",
-        "Analytics Service: Performance monitoring and optimization"
-      ],
-      dataFlow: [
-        "Rider requests ride → Rider Service",
-        "Rider Service finds nearby drivers → Driver Service",
-        "Matching algorithm selects best driver → Matching Service",
-        "Pricing calculated → Pricing Service",
-        "Notifications sent → Notification Service",
-        "Ride tracking and updates → Real-time updates"
-      ]
-    },
-    scalability: [
-      "Microservices architecture for independent scaling",
-      "Geographic sharding for location-based data",
-      "Real-time data processing with Apache Kafka",
-      "Caching for frequently accessed data",
-      "Load balancing across multiple regions",
-      "Auto-scaling based on demand patterns"
-    ],
-    technologies: [
-      "Backend: Go, Java, or Python microservices",
-      "Database: PostgreSQL for transactional data, Redis for caching",
-      "Message Queue: Apache Kafka for real-time events",
-      "Matching Algorithm: Machine learning and optimization algorithms",
-      "Maps API: Google Maps or Mapbox for routing",
-      "Real-time: WebSockets for live updates"
-    ]
-  }
-};
-
-export default function DeepDivePage({ params }: { params: { slug: string } }) {
+export default function DeepDivePage({ params }: { params: Promise<{ slug: string }> }) {
   const [deepDive, setDeepDive] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isCompleted, setIsCompleted] = useState(false);
-
-  const { exportPdf, isGenerating } = usePdfExport({
-    elementId: 'deep-dive-content',
-    filename: `${params.slug}-deep-dive.pdf`,
-  });
-
-  const handleShare = () => {
-    const url = window.location.href;
-    const title = `I just completed the ${deepDive?.title} Deep Dive on Monchee 🚀`;
-    const summary = deepDive?.problemStatement || '';
-    const source = 'Monchee.com';
-    shareToLinkedIn(url, title, summary, source);
-  };
+  const [activeTab, setActiveTab] = useState('interview');
+  const { toast } = useToast();
+  const { exportDeepDive } = usePDFExport();
 
   const handleComplete = async () => {
-    // In a real app, this would call an API to mark the deep dive as completed
-    setIsCompleted(true);
-    // You could also call the deep dive completion API here
+    try {
+      const response = await fetch('/api/deep-dive/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          deepDiveId: deepDive?.title.toLowerCase().replace(/\s+/g, '-'),
+          score: 95,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Deep Dive Completed!',
+          description: 'Great job! You\'ve completed this deep dive.',
+        });
+      }
+    } catch (error) {
+      console.error('Error completing deep dive:', error);
+    }
+  };
+
+  const handlePDFExport = () => {
+    exportDeepDive(deepDive);
+  };
+
+  const handleLinkedInShare = () => {
+    shareToLinkedIn(
+      window.location.href,
+      deepDive.title,
+      deepDive.description,
+      'Monchee'
+    );
   };
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      const data = deepDives[params.slug as keyof typeof deepDives];
+    const loadDeepDive = async () => {
+      const resolvedParams = await params;
+      const data = deepDivesData[resolvedParams.slug as keyof typeof deepDivesData];
       if (data) {
         setDeepDive(data);
       }
       setLoading(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [params.slug]);
-
-  useEffect(() => {
-    mermaid.contentLoaded();
-  }, []);
+    };
+    
+    loadDeepDive();
+  }, [params]);
 
   if (loading) {
     return (
@@ -166,8 +81,7 @@ export default function DeepDivePage({ params }: { params: { slug: string } }) {
     return (
       <div className="container mx-auto py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Deep Dive Not Found</h1>
-          <p className="text-gray-600">The deep dive you're looking for doesn't exist.</p>
+          <div className="text-lg">Deep dive not found</div>
         </div>
       </div>
     );
@@ -175,185 +89,300 @@ export default function DeepDivePage({ params }: { params: { slug: string } }) {
 
   return (
     <div className="container mx-auto py-8">
-      <section className="text-center mb-12">
-        <h1 className="text-5xl font-extrabold tracking-tight gradient-text mb-4">
-          {deepDive.title}
-        </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          {deepDive.problemStatement}
-        </p>
-        <div className="mt-6 flex justify-center space-x-4">
-          <Button onClick={exportPdf} disabled={isGenerating}>
-            {isGenerating ? 'Generating PDF...' : (
-              <>
-                <Download className="mr-2 h-4 w-4" />
-                Download PDF
-              </>
-            )}
-          </Button>
-          <Button variant="outline" onClick={handleShare}>
-            <Share2 className="mr-2 h-4 w-4" />
-            Share to LinkedIn
-          </Button>
-        </div>
-      </section>
-
-      <Card className="mb-8" id="deep-dive-content">
-        <CardContent className="p-6">
-          <div className="space-y-8">
-            {/* Problem Statement */}
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Target className="h-6 w-6 text-red-500" />
-                Problem Statement
-              </h3>
-              <p className="text-gray-700 leading-relaxed">
-                {deepDive.problemStatement}
-              </p>
-            </div>
-
-            {/* Background */}
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Clock className="h-6 w-6 text-blue-500" />
-                Background
-              </h3>
-              <p className="text-gray-700 leading-relaxed">
-                {deepDive.background}
-              </p>
-            </div>
-
-            {/* Challenges */}
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Lightbulb className="h-6 w-6 text-yellow-500" />
-                Key Challenges
-              </h3>
-              <ul className="space-y-2">
-                {deepDive.challenges.map((challenge: string, index: number) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <span className="text-yellow-500 mt-1">•</span>
-                    <span className="text-gray-700">{challenge}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Architecture */}
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Code className="h-6 w-6 text-purple-500" />
-                System Architecture
-              </h3>
-              
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold text-lg text-gray-800 mb-3">Components</h4>
-                  <ul className="space-y-2">
-                    {deepDive.architecture.components.map((component: string, index: number) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <span className="text-purple-500 mt-1">•</span>
-                        <span className="text-gray-700">{component}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold text-lg text-gray-800 mb-3">Data Flow</h4>
-                  <ul className="space-y-2">
-                    {deepDive.architecture.dataFlow.map((flow: string, index: number) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <span className="text-blue-500 mt-1">→</span>
-                        <span className="text-gray-700">{flow}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* Scalability */}
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold text-gray-900">Scalability Considerations</h3>
-              <ul className="space-y-2">
-                {deepDive.scalability.map((item: string, index: number) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <span className="text-green-500 mt-1">•</span>
-                    <span className="text-gray-700">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Technologies */}
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold text-gray-900">Technology Stack</h3>
-              <ul className="space-y-2">
-                {deepDive.technologies.map((tech: string, index: number) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <span className="text-orange-500 mt-1">•</span>
-                    <span className="text-gray-700">{tech}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Diagram */}
-            <div className="mt-8">
-              <h3 className="text-2xl font-bold mb-4">System Architecture Diagram</h3>
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <div className="mermaid">
-                  {`graph TD
-                    User[User] --> App[Mobile App]
-                    App --> API[API Gateway]
-                    API --> Auth[Auth Service]
-                    API --> Feed[Feed Service]
-                    Feed --> Cache[(Redis Cache)]
-                    Feed --> DB[(Database)]
-                    Feed --> Queue[Message Queue]
-                    Queue --> Notif[Notification Service]`}
-                </div>
-              </div>
+      {/* Hero Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">{deepDive.title}</h1>
+            <p className="text-xl text-muted-foreground mb-4">{deepDive.description}</p>
+            <div className="flex gap-4">
+              <Badge variant="secondary">{deepDive.difficulty}</Badge>
+              <Badge variant="outline">{deepDive.duration}</Badge>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Action Buttons */}
-      <div className="flex justify-center space-x-4 mb-8">
-        <Button 
-          onClick={handleComplete}
-          disabled={isCompleted}
-          className={isCompleted ? "bg-green-600" : ""}
-        >
-          {isCompleted ? (
-            <>
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Completed
-            </>
-          ) : (
-            <>
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Mark as Read
-            </>
-          )}
-        </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePDFExport}
+            >
+              📄 Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLinkedInShare}
+            >
+              🔗 Share on LinkedIn
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Notes Section */}
-      <NotesSection 
-        type="deep-dive" 
-        ref={params.slug} 
-        title={deepDive.title}
-      />
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="interview">Interview Take</TabsTrigger>
+          <TabsTrigger value="realworld">Real-World Take</TabsTrigger>
+        </TabsList>
 
-      {/* Discussions Section */}
-      <DiscussionsSection 
-        type="deep-dive" 
-        ref={params.slug} 
-        title={deepDive.title}
-      />
+        <TabsContent value="interview" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Overview</CardTitle>
+              <CardDescription>{deepDive.interviewTake.overview}</CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Requirements Analysis</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Functional Requirements</h3>
+                <ul className="space-y-2">
+                  {deepDive.interviewTake.requirements.functional.map((req: string, index: number) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-green-500 mr-2">✓</span>
+                      <span>{req}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Non-Functional Requirements</h3>
+                <ul className="space-y-2">
+                  {deepDive.interviewTake.requirements.nonFunctional.map((req: string, index: number) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-blue-500 mr-2">⚡</span>
+                      <span>{req}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>System Architecture</CardTitle>
+              <CardDescription>{deepDive.interviewTake.architecture.highLevel}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {deepDive.interviewTake.architecture.components.map((component: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4">
+                    <h4 className="font-semibold mb-2">{component.name}</h4>
+                    <p className="text-sm text-muted-foreground mb-2">{component.description}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {component.technologies.map((tech: string, techIndex: number) => (
+                        <Badge key={techIndex} variant="secondary" className="text-xs">
+                          {tech}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Data Models</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Object.entries(deepDive.interviewTake.dataModels).map(([modelName, model]: [string, any]) => (
+                  <div key={modelName} className="border rounded-lg p-4">
+                    <h4 className="font-semibold mb-2 capitalize">{modelName}</h4>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="font-medium">Fields: </span>
+                        <span className="text-sm text-muted-foreground">{model.fields.join(', ')}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Relationships: </span>
+                        <span className="text-sm text-muted-foreground">{model.relationships}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Key Algorithms</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Object.entries(deepDive.interviewTake.algorithms).map(([algoName, algo]: [string, any]) => (
+                  <div key={algoName} className="border rounded-lg p-4">
+                    <h4 className="font-semibold mb-2">{algo.name}</h4>
+                    <p className="text-sm text-muted-foreground mb-3">{algo.description}</p>
+                    {algo.factors && (
+                      <div className="mb-3">
+                        <h5 className="font-medium mb-2">Key Factors:</h5>
+                        <ul className="space-y-1">
+                          {algo.factors.map((factor: string, index: number) => (
+                            <li key={index} className="text-sm">• {factor}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {algo.approach && (
+                      <div className="mb-3">
+                        <h5 className="font-medium mb-2">Approach:</h5>
+                        <ul className="space-y-1">
+                          {algo.approach.map((step: string, index: number) => (
+                            <li key={index} className="text-sm">• {step}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {algo.complexity && (
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-medium">Complexity: </span>{algo.complexity}
+                      </div>
+                    )}
+                    {algo.implementation && (
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-medium">Implementation: </span>{algo.implementation}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Scaling Considerations</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-2">Key Challenges</h4>
+                  <ul className="space-y-1">
+                    {deepDive.interviewTake.scaling.challenges.map((challenge: string, index: number) => (
+                      <li key={index} className="text-sm">• {challenge}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Solutions</h4>
+                  <ul className="space-y-1">
+                    {deepDive.interviewTake.scaling.solutions.map((solution: string, index: number) => (
+                      <li key={index} className="text-sm">• {solution}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Design Trade-offs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {deepDive.interviewTake.tradeoffs.map((tradeoff: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4">
+                    <h4 className="font-semibold mb-2">{tradeoff.decision}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h5 className="font-medium text-green-600 mb-2">Pros</h5>
+                        <ul className="space-y-1">
+                          {tradeoff.pros.map((pro: string, proIndex: number) => (
+                            <li key={proIndex} className="text-sm">• {pro}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h5 className="font-medium text-red-600 mb-2">Cons</h5>
+                        <ul className="space-y-1">
+                          {tradeoff.cons.map((con: string, conIndex: number) => (
+                            <li key={conIndex} className="text-sm">• {con}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="realworld" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Current State</CardTitle>
+              <CardDescription>{deepDive.realWorldTake.currentState}</CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Technical Challenges</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {deepDive.realWorldTake.technicalChallenges.map((challenge: string, index: number) => (
+                  <li key={index} className="flex items-start">
+                    <span className="text-orange-500 mr-2">⚠️</span>
+                    <span>{challenge}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Lessons Learned</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {deepDive.realWorldTake.lessonsLearned.map((lesson: string, index: number) => (
+                  <li key={index} className="flex items-start">
+                    <span className="text-blue-500 mr-2">💡</span>
+                    <span>{lesson}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Future Considerations</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {deepDive.realWorldTake.futureConsiderations.map((consideration: string, index: number) => (
+                  <li key={index} className="flex items-start">
+                    <span className="text-purple-500 mr-2">🔮</span>
+                    <span>{consideration}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Bottom Actions */}
+      <div className="mt-8 flex justify-center">
+        <Button onClick={handleComplete} size="lg">
+          Mark as Complete
+        </Button>
+      </div>
     </div>
   );
 }

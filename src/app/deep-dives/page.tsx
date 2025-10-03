@@ -10,24 +10,48 @@ const deepDives = [
     title: "Instagram Feed",
     description: "Learn how to design a scalable photo sharing system with real-time updates, content delivery networks, and efficient data storage strategies for millions of users.",
     image: "https://placehold.co/600x400",
-    difficulty: "Intermediate",
-    readTime: "15 min read"
+    difficulty: "Hard",
+    readTime: "45-60 min"
   },
   {
     slug: "uber-dispatch",
     title: "Uber Dispatch",
     description: "Design a ride-sharing system that efficiently matches drivers with riders in real-time, handling geolocation data, surge pricing, and optimal route calculations.",
     image: "https://placehold.co/600x400",
-    difficulty: "Advanced",
-    readTime: "20 min read"
+    difficulty: "Hard",
+    readTime: "50-65 min"
   },
   {
     slug: "netflix-streaming",
     title: "Netflix Streaming",
     description: "Build a video streaming platform with global content delivery, recommendation systems, adaptive bitrate streaming, and massive scale infrastructure.",
     image: "https://placehold.co/600x400",
-    difficulty: "Expert",
-    readTime: "25 min read"
+    difficulty: "Hard",
+    readTime: "55-70 min"
+  },
+  {
+    slug: "whatsapp-messaging",
+    title: "WhatsApp Messaging",
+    description: "Design a real-time messaging platform with end-to-end encryption, global scale, and massive concurrent user support.",
+    image: "https://placehold.co/600x400",
+    difficulty: "Hard",
+    readTime: "50-65 min"
+  },
+  {
+    slug: "youtube-video-streaming",
+    title: "YouTube Video Streaming",
+    description: "Create a global video streaming platform with content delivery, recommendation engine, and massive scale infrastructure.",
+    image: "https://placehold.co/600x400",
+    difficulty: "Hard",
+    readTime: "55-70 min"
+  },
+  {
+    slug: "twitter-social-feed",
+    title: "Twitter Social Feed",
+    description: "Design a real-time social media platform with timeline generation, content moderation, and global scale.",
+    image: "https://placehold.co/600x400",
+    difficulty: "Hard",
+    readTime: "45-60 min"
   }
 ];
 
@@ -46,7 +70,7 @@ export default function DeepDivesPage() {
             </p>
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
               <BookOpen className="h-4 w-4" />
-              <span>3 comprehensive guides available</span>
+              <span>6 comprehensive guides available</span>
             </div>
           </div>
         </div>
