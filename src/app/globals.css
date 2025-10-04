@@ -1,5 +1,20 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "mermaid/dist/mermaid.css";
+
+/* Mermaid diagram styling */
+.mermaid {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
 
 @custom-variant dark (&:is(.dark *));
 

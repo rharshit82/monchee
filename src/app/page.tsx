@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowRight, BookOpen, Code, Users, FileText, Target, MessageCircle, ExternalLink, Trophy, Star } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   const currentYear = new Date().getFullYear();
@@ -20,13 +21,17 @@ export default function Home() {
               Deep dives, real-world projects, cheatsheets, and more.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
-              <Button size="lg" className="text-lg px-8 py-6 rounded-xl">
-                Start Learning Free
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6 rounded-xl">
-                View Case Studies
-              </Button>
+              <Link href="/learn">
+                <Button size="lg" className="text-lg px-8 py-6 rounded-xl">
+                  Start Learning Free
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <Link href="/labs">
+                <Button variant="outline" size="lg" className="text-lg px-8 py-6 rounded-xl">
+                  View Case Studies
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -42,25 +47,30 @@ export default function Home() {
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">Deep Dives</h2>
                 <p className="text-lg text-gray-600">Comprehensive guides on system design concepts</p>
               </div>
-              <Button variant="outline" className="hidden sm:flex">
-                View All
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
+              <Link href="/deep-dives">
+                <Button variant="outline" className="hidden sm:flex">
+                  View All
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 {
                   title: "Instagram Feed",
+                  slug: "instagram-feed",
                   description: "Learn how to design a scalable photo sharing system with real-time updates and content delivery.",
                   difficulty: "Intermediate"
                 },
                 {
                   title: "Uber Dispatch",
+                  slug: "uber-dispatch",
                   description: "Design a ride-sharing system that efficiently matches drivers with riders in real-time.",
                   difficulty: "Advanced"
                 },
                 {
                   title: "Netflix Streaming",
+                  slug: "netflix-streaming",
                   description: "Build a video streaming platform with global content delivery and recommendation systems.",
                   difficulty: "Expert"
                 }
@@ -76,19 +86,23 @@ export default function Home() {
                     <p className="text-gray-600 text-sm">{dive.description}</p>
                   </CardContent>
                   <CardFooter>
-                    <Button variant="outline" size="sm" className="w-full">
-                      Explore
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    <Link href={`/deep-dives/${dive.slug}`}>
+                      <Button variant="outline" size="sm" className="w-full">
+                        Explore
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
                   </CardFooter>
                 </Card>
               ))}
             </div>
             <div className="text-center mt-6 sm:hidden">
-              <Button variant="outline">
-                View All Deep Dives
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
+              <Link href="/deep-dives">
+                <Button variant="outline">
+                  View All Deep Dives
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -99,25 +113,30 @@ export default function Home() {
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">Case Labs</h2>
                 <p className="text-lg text-gray-600">Hands-on projects to apply your knowledge</p>
               </div>
-              <Button variant="outline" className="hidden sm:flex">
-                View All
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
+              <Link href="/labs">
+                <Button variant="outline" className="hidden sm:flex">
+                  View All
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 {
                   title: "Rate Limiter",
+                  slug: "rate-limiter",
                   description: "Implement a distributed rate limiting system using Redis and sliding window algorithms.",
                   duration: "2-3 hours"
                 },
                 {
                   title: "URL Shortener",
+                  slug: "url-shortener",
                   description: "Build a scalable URL shortening service with analytics and custom domains.",
                   duration: "3-4 hours"
                 },
                 {
                   title: "Message Queue",
+                  slug: "message-queue",
                   description: "Design and implement a reliable message queuing system with persistence and ordering.",
                   duration: "4-5 hours"
                 }
@@ -133,19 +152,23 @@ export default function Home() {
                     <p className="text-gray-600 text-sm">{lab.description}</p>
                   </CardContent>
                   <CardFooter>
-                    <Button size="sm" className="w-full">
-                      Start Lab
-                      <Code className="ml-2 h-4 w-4" />
-                    </Button>
+                    <Link href={`/labs/${lab.slug}`}>
+                      <Button size="sm" className="w-full">
+                        Start Lab
+                        <Code className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
                   </CardFooter>
                 </Card>
               ))}
             </div>
             <div className="text-center mt-6 sm:hidden">
-              <Button variant="outline">
-                View All Case Labs
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
+              <Link href="/labs">
+                <Button variant="outline">
+                  View All Case Labs
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -156,20 +179,24 @@ export default function Home() {
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">Cheatsheets</h2>
                 <p className="text-lg text-gray-600">Quick reference guides for interviews</p>
               </div>
-              <Button variant="outline" className="hidden sm:flex">
-                View All
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
+              <Link href="/cheatsheets">
+                <Button variant="outline" className="hidden sm:flex">
+                  View All
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
                 {
                   title: "Caching Patterns",
+                  slug: "caching-patterns",
                   description: "Essential caching strategies, eviction policies, and distributed caching patterns.",
                   topics: ["Cache-Aside", "Write-Through", "Write-Behind", "LRU/LFU"]
                 },
                 {
                   title: "Database Trade-offs",
+                  slug: "database-tradeoffs",
                   description: "ACID vs BASE, CAP theorem, and choosing the right database for your use case.",
                   topics: ["ACID", "BASE", "CAP Theorem", "SQL vs NoSQL"]
                 }
@@ -192,19 +219,23 @@ export default function Home() {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button variant="outline" size="sm" className="w-full">
-                      View
-                      <FileText className="ml-2 h-4 w-4" />
-                    </Button>
+                    <Link href={`/cheatsheets/${sheet.slug}`}>
+                      <Button variant="outline" size="sm" className="w-full">
+                        View
+                        <FileText className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
                   </CardFooter>
                 </Card>
               ))}
             </div>
             <div className="text-center mt-6 sm:hidden">
-              <Button variant="outline">
-                View All Cheatsheets
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
+              <Link href="/cheatsheets">
+                <Button variant="outline">
+                  View All Cheatsheets
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -254,10 +285,12 @@ export default function Home() {
                 </Table>
               </CardContent>
               <CardFooter className="justify-center">
-                <Button variant="outline" className="w-full">
-                  <Trophy className="mr-2 h-4 w-4" />
-                  View Full Leaderboard
-                </Button>
+                <Link href="/community">
+                  <Button variant="outline" className="w-full">
+                    <Trophy className="mr-2 h-4 w-4" />
+                    View Full Leaderboard
+                  </Button>
+                </Link>
               </CardFooter>
             </Card>
           </div>
@@ -273,10 +306,12 @@ export default function Home() {
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             Join thousands of developers who are mastering system design with our comprehensive learning platform.
           </p>
-          <Button size="lg" variant="secondary" className="text-lg px-8 py-6 rounded-xl">
-            Get Started Today
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+          <Link href="/learn">
+            <Button size="lg" variant="secondary" className="text-lg px-8 py-6 rounded-xl">
+              Get Started Today
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
         </div>
       </section>
 

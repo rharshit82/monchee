@@ -264,6 +264,7 @@ export default function LabPage({ params }: { params: Promise<{ slug: string }> 
   const [lab, setLab] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [completed, setCompleted] = useState(false);
+  const [diagramLoading, setDiagramLoading] = useState(false);
 
   const handleExportPDF = () => {
     if (!lab) return;
@@ -291,7 +292,6 @@ export default function LabPage({ params }: { params: Promise<{ slug: string }> 
         const data = labsData[slug as keyof typeof labsData];
         if (data) {
           setLab(data);
-          mermaid.initialize({ startOnLoad: true });
         }
         setLoading(false);
       }, 500);
@@ -301,6 +301,62 @@ export default function LabPage({ params }: { params: Promise<{ slug: string }> 
     
     loadLab();
   }, [params]);
+
+  // Initialize Mermaid when lab data is loaded
+  useEffect(() => {
+    if (lab) {
+      setDiagramLoading(true);
+      
+      // Clear any existing mermaid content
+      const mermaidElements = document.querySelectorAll('.mermaid');
+      mermaidElements.forEach(element => {
+        element.innerHTML = '<div class="text-center text-gray-500">Loading diagram...</div>';
+      });
+
+      // Initialize Mermaid
+      mermaid.initialize({ 
+        startOnLoad: false,
+        theme: 'default',
+        securityLevel: 'loose',
+        fontFamily: 'inherit'
+      });
+      
+      // Render all mermaid diagrams after a short delay to ensure DOM is ready
+      setTimeout(() => {
+        const mermaidElements = document.querySelectorAll('.mermaid');
+        let completedDiagrams = 0;
+        const totalDiagrams = mermaidElements.length;
+        
+        mermaidElements.forEach((element, index) => {
+          const id = `mermaid-${lab.title}-${index}`;
+          const diagramText = element.textContent || '';
+          
+          if (diagramText.trim()) {
+            mermaid.render(id, diagramText).then(({ svg }) => {
+              element.innerHTML = svg;
+              completedDiagrams++;
+              if (completedDiagrams === totalDiagrams) {
+                setDiagramLoading(false);
+              }
+            }).catch((error) => {
+              console.error('Mermaid rendering error:', error);
+              // Fallback: show the text if rendering fails
+              element.innerHTML = `<pre class="text-sm text-gray-600 p-4 bg-gray-50 rounded">${diagramText}</pre>`;
+              completedDiagrams++;
+              if (completedDiagrams === totalDiagrams) {
+                setDiagramLoading(false);
+              }
+            });
+          } else {
+            completedDiagrams++;
+            if (completedDiagrams === totalDiagrams) {
+              setDiagramLoading(false);
+            }
+          }
+        });
+      }, 100);
+    }
+  }, [lab]);
 
   const handleComplete = async () => {
     try {
@@ -485,7 +541,7 @@ export default function LabPage({ params }: { params: Promise<{ slug: string }> 
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="mermaid">
+                <div className="mermaid" key={`mermaid-${lab.title}`}>
                   {lab.architecture}
                 </div>
               </CardContent>

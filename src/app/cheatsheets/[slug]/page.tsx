@@ -365,7 +365,6 @@ export default function CheatsheetPage({ params }: { params: Promise<{ slug: str
             {/* Notes Section */}
             <NotesSection 
               type="cheatsheet" 
-              ref={cheatsheet.title.toLowerCase().replace(/\s+/g, '-')} 
               title={cheatsheet.title}
             />
           </div>

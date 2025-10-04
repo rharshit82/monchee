@@ -582,7 +582,6 @@ export default function LearnPage() {
           toast({
             title: "Error",
             description: result.error || "Failed to save progress. Please try again.",
-            variant: "destructive",
           });
         }
       } catch (error) {
@@ -590,7 +589,6 @@ export default function LearnPage() {
         toast({
           title: "Error",
           description: "Failed to save progress. Please try again.",
-          variant: "destructive",
         });
       } finally {
         setQuizState(prev => ({

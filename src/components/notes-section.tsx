@@ -27,7 +27,7 @@ interface Note {
 
 interface NotesSectionProps {
   type: 'lab' | 'deep-dive' | 'cheatsheet';
-  ref: string;
+  ref?: string;
   title: string;
 }
 
